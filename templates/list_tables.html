@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Visualizador de Dados SIGTAP</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 20px; }
+        h1 { color: #333; margin: 0; }
+        .custom-button { display: inline-block; padding: 10px 20px; font-size: 16px; text-decoration: none; color: #fff; background-color: #3498db; border-radius: 5px; }
+        .custom-button:hover { background-color: #2980b9; }
+        .container { max-width: 800px; margin: auto; }
+        ul { list-style-type: none; padding: 0; }
+        li { background-color: #f2f2f2; border: 1px solid #ddd; margin-top: -1px; padding: 12px; }
+        li a { text-decoration: none; color: #333; font-weight: bold; }
+        li:hover { background-color: #e2e2e2; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Outras Tabelas de Dados</h1>
+            <a href="/" class="custom-button">Voltar para Tabela Principal</a>
+        </div>
+        
+        <ul>
+            {% for table in tables %}
+                <li><a href="{{ url_for('view_table', table=table) }}">{{ table }}</a></li>
+            {% else %}
+                <li>Nenhuma outra tabela processada foi encontrada.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

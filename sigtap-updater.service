@@ -1,0 +1,12 @@
+[Unit]
+Description=Sigtap Automated Updater
+After=network.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/Sigtap
+
+# Executa o script updater.py
+ExecStart=/home/ubuntu/.cargo/bin/uv run updater.py

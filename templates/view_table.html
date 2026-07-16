@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ table_name }} - Tabela SIGTAP</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { text-align: center; color: #333; }
+        .custom-button { display: inline-block; padding: 10px 20px; margin-bottom: 20px; font-size: 16px; font-weight: bold; text-align: center; text-decoration: none; color: #fff; background-color: #3498db; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s ease; }
+        .custom-button:hover { background-color: #2980b9; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; word-wrap: break-word; }
+        th { background-color: #f2f2f2; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+
+        .wide-column {
+            width: 35%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Visualizando a Tabela: <strong>{{ table_name }}</strong></h1>
+    <a href="/tables" class="custom-button">Voltar para a Lista de Tabelas</a>
+
+    <div class="filter-container">
+        <input type="text" id="filterInput" placeholder="Filtrar em qualquer coluna...">
+    </div>
+
+    <table id="data-table">
+        <thead>
+            <tr>
+                <!-- Esta parte já estava correta -->
+                {% for col in header %}
+                <th {% if col.upper().startswith('NO_') %}class="wide-column"{% endif %}>{{ col }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <!-- --- SEÇÃO CORRIGIDA --- -->
+                {% for cell in row %}
+                    {# Usamos o índice do loop para encontrar o cabeçalho correspondente #}
+                    {% set current_header = header[loop.index0] %}
+                    <td {% if current_header.upper().startswith('NO_') %}class="wide-column"{% endif %}>{{ cell }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <script>
+        document.getElementById("filterInput").addEventListener("keyup", function() {
+            var filter = this.value.toUpperCase();
+            var table = document.getElementById("data-table");
+            var tr = table.getElementsByTagName("tr");
+
+            for (var i = 1; i < tr.length; i++) {
+                var display = "none";
+                var tds = tr[i].getElementsByTagName("td");
+                for (var j = 0; j < tds.length; j++) {
+                    if (tds[j] && tds[j].textContent.toUpperCase().indexOf(filter) > -1) {
+                        display = "";
+                        break;
+                    }
+                }
+                tr[i].style.display = display;
+            }
+        });
+    </script>
+</body>
+</html>

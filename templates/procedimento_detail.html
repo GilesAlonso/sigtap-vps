@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes | {{ proc.CO_PROCEDIMENTO }}</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            /* SolveThis Theme Colors */
+            --primary: #2D8C3C;
+            --primary-dark: #237A33;
+            --accent: #F97316;
+            --accent-hover: #EA580C;
+            --bg-color: #F3F4F6;
+            --card-bg: #FFFFFF;
+            --text-main: #1F2937;
+            --text-muted: #6B7280;
+            --border: #E5E7EB;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding-bottom: 3rem;
+        }
+        
+        /* Navbar */
+        .navbar {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            opacity: 0.9;
+            transition: opacity 0.2s;
+        }
+        
+        .navbar a:hover {
+            opacity: 1;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        /* Hero Card */
+        .hero-card {
+            background-color: var(--card-bg);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 2rem;
+            border-top: 6px solid var(--accent);
+        }
+
+        .proc-code {
+            display: inline-block;
+            background-color: #FEF3C7;
+            color: #D97706;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-family: monospace;
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .proc-name {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 0 0 1rem 0;
+            line-height: 1.2;
+        }
+
+        .proc-desc {
+            font-size: 1rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin: 0;
+            background-color: #F9FAFB;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+        }
+
+        /* Grids for Relational Data */
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin: 0 0 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title i {
+            color: var(--primary);
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 1024px) {
+            .data-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .data-grid .full-width {
+                grid-column: 1 / -1;
+            }
+        }
+
+        .data-card {
+            background-color: var(--card-bg);
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .data-card-header {
+            background-color: #F8FAFC;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .data-card-body {
+            padding: 0;
+            overflow-x: auto;
+            flex-grow: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        th {
+            background-color: white;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .no-data {
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <a href="{{ url_for('index') }}"><i class="fas fa-arrow-left"></i> Voltar ao Painel Principal</a>
+    </div>
+
+    <div class="container">
+        
+        <div class="hero-card">
+            <div class="proc-code">{{ proc.CO_PROCEDIMENTO }}</div>
+            <h1 class="proc-name">{{ proc.NO_PROCEDIMENTO }}</h1>
+            {% if descricao %}
+            <div class="proc-desc">
+                <strong>Descrição:</strong> {{ descricao }}
+            </div>
+            {% endif %}
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+                <div><strong>Complexidade:</strong> {{ proc.TP_COMPLEXIDADE }}</div>
+                <div><strong>Financiamento:</strong> {{ proc.CO_FINANCIAMENTO }}</div>
+                <div><strong>Valor SA:</strong> R$ {{ "%.2f"|format(proc.VL_SA) }}</div>
+                <div><strong>Valor Hosp.:</strong> R$ {{ "%.2f"|format(proc.VL_H) }}</div>
+                <div><strong>Sexo:</strong> {{ proc.TP_SEXO }}</div>
+                <div><strong>Idade Mínima:</strong> {% if proc.VL_IDADE_MINIMA == 9999 %}Sem limite{% else %}{{ proc.VL_IDADE_MINIMA | int }} meses{% endif %}</div>
+                <div><strong>Idade Máxima:</strong> {% if proc.VL_IDADE_MAXIMA == 9999 %}Ilimitada{% else %}{{ proc.VL_IDADE_MAXIMA | int }} meses{% endif %}</div>
+                <div><strong>Qtd. Pontos:</strong> {{ proc.QT_PONTOS | int }}</div>
+                <div><strong>Máx. Execução:</strong> {% if proc.QT_MAXIMA_EXECUCAO == 9999 %}Ilimitado{% else %}{{ proc.QT_MAXIMA_EXECUCAO | int }}{% endif %}</div>
+                <div><strong>Dias Perm.:</strong> {% if proc.QT_DIAS_PERMANENCIA == 9999 %}Ilimitado{% else %}{{ proc.QT_DIAS_PERMANENCIA | int }}{% endif %}</div>
+                {% if proc.QT_TEMPO_PERMANENCIA and proc.QT_TEMPO_PERMANENCIA != 9999 %}
+                <div><strong>Tempo Perm.:</strong> {{ proc.QT_TEMPO_PERMANENCIA | int }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="section-title"><i class="fas fa-link"></i> Relações Cadastradas</div>
+        
+        {% if related_data %}
+        <div class="data-grid">
+            {% for title, data in related_data.items() %}
+                <div class="data-card {% if data.header|length > 3 or (loop.index % 2 != 0 and loop.last) %}full-width{% endif %}">
+                    <div class="data-card-header">{{ title }}</div>
+                    <div class="data-card-body">
+                        {% if data.rows %}
+                            <table>
+                                <thead>
+                                    <tr>
+                                        {% for header in data.header %}
+                                            <th>{{ header }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in data.rows %}
+                                        <tr>
+                                            {% for cell in row %}
+                                                <td>{{ cell }}</td>
+                                            {% endfor %}
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <div class="no-data">Sem registros vinculados.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        {% else %}
+            <div class="hero-card" style="border-top-color: #9CA3AF; text-align: center; color: var(--text-muted);">
+                Nenhum dado relacional encontrado para este procedimento.
+            </div>
+        {% endif %}
+
+    </div>
+</body>
+</html>

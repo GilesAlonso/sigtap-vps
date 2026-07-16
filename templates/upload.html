@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload de Arquivo SIGTAP</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f4f4; }
+        .container { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; }
+        h1 { color: #333; margin-bottom: 20px; }
+        .custom-button { display: inline-block; padding: 10px 20px; font-size: 16px; text-decoration: none; color: #fff; background-color: #3498db; border-radius: 5px; border: none; cursor: pointer; }
+        .custom-button:hover { background-color: #2980b9; }
+        input[type="file"] { border: 1px solid #ccc; display: inline-block; padding: 6px 12px; cursor: pointer; margin-bottom: 20px; }
+        .back-link { display: block; margin-top: 20px; color: #555; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Carregar Novo Arquivo .zip</h1>
+        <form action="/upload" method="post" enctype="multipart/form-data">
+            <p>Selecione o arquivo .zip do SIGTAP para processar:</p>
+            <input type="file" name="file" accept=".zip" required>
+            <br>
+            <input type="submit" value="Processar Arquivo" class="custom-button">
+        </form>
+        <a href="/" class="back-link">Voltar para a Lista de Tabelas</a>
+    </div>
+</body>
+</html>

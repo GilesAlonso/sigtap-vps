@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Sigtap Updater Daily at 5AM BRT
+
+[Timer]
+# Se a VPS estiver no fuso UTC, 5 AM BRT = 8 AM UTC.
+# Se a VPS já estiver em America/Sao_Paulo, ajuste para 05:00:00
+OnCalendar=*-*-* 08:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

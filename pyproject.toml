@@ -1,0 +1,11 @@
+[project]
+name = "sigtap"
+version = "0.1.0"
+description = "Sigtap Viewer App"
+requires-python = ">=3.10"
+dependencies = [
+    "flask",
+    "pandas",
+    "werkzeug",
+    "gunicorn"
+]

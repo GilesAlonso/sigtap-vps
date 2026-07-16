@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+processed_data/
+temp.zip
+output_file.csv
+*.txt
+!requirements.txt
+!README.md

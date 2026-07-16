@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sigtap | Painel de Procedimentos</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            /* SolveThis Theme Colors */
+            --primary: #2D8C3C;
+            --primary-dark: #237A33;
+            --accent: #F97316;
+            --accent-hover: #EA580C;
+            --bg-color: #F3F4F6;
+            --card-bg: #FFFFFF;
+            --text-main: #1F2937;
+            --text-muted: #6B7280;
+            --border: #E5E7EB;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        /* Navbar */
+        .navbar {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .navbar-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.025em;
+        }
+        
+        .badge {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .nav-buttons a {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-decoration: none;
+            color: white;
+            background-color: var(--accent);
+            border-radius: 0.375rem;
+            transition: all 0.2s;
+            margin-left: 0.5rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-buttons a:hover {
+            background-color: var(--accent-hover);
+        }
+
+        /* Container */
+        .container {
+            max-width: 98%;
+            margin: 1.5rem auto;
+            padding: 0 1rem;
+        }
+
+        /* Dashboard Top Row */
+        .dash-top {
+            margin-bottom: 1.5rem;
+        }
+
+
+
+        /* Filters */
+        .filter-card {
+            background-color: var(--card-bg);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .filter-group label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .filter-group input, .filter-group select {
+            padding: 0.625rem;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-family: inherit;
+            color: var(--text-main);
+            background-color: #F9FAFB;
+        }
+
+        /* Accordion */
+        .accordion-btn {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-weight: 600;
+            padding: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+        }
+        
+        .advanced-toggle {
+            color: var(--primary);
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .advanced-filters {
+            display: none;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .advanced-filters.active {
+            display: block;
+        }
+
+        /* Table */
+        .table-card {
+            background-color: var(--card-bg);
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .table-container {
+            width: 100%;
+            max-height: 65vh;
+            overflow: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: auto;
+        }
+
+        th {
+            background-color: #F8FAFC;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            padding: 1rem;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 1px 0 var(--border);
+        }
+
+        td {
+            padding: 1rem;
+            font-size: 0.875rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tbody tr:hover {
+            background-color: #F3F4F6;
+        }
+
+        th:nth-child(1), td:nth-child(1) { width: 120px; font-family: monospace; font-size: 14px;}
+        
+        td a {
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--primary);
+            z-index: 20;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <div class="navbar-brand">
+            <h1 class="navbar-title"><i class="fas fa-heartbeat"></i> SIGTAP</h1>
+            {% if competencia %}
+                <span class="badge">Competência: {{ competencia }}</span>
+            {% endif %}
+            <span class="badge" style="background-color: var(--accent);"><span id="kpi-count">0</span> resultados</span>
+        </div>
+        <div class="nav-buttons">
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <div class="dash-top">
+            <div class="filter-card">
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label>Código do Procedimento</label>
+                        <input type="text" id="filter-codigo" placeholder="Ex: 0101010010">
+                    </div>
+                    <div class="filter-group">
+                        <label>Nome do Procedimento</label>
+                        <input type="text" id="filter-nome" placeholder="Buscar por nome...">
+                    </div>
+                    <div class="filter-group">
+                        <label>Complexidade</label>
+                        <select id="filter-complexidade">
+                            <option value="">Todas</option>
+                            <option value="0">0 - NA</option>
+                            <option value="1">1 - AB</option>
+                            <option value="2">2 - MC</option>
+                            <option value="3">3 - AC</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Financiamento</label>
+                        <select id="filter-financiamento">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <div class="advanced-toggle" onclick="toggleAdvancedFilters()">
+                        <i class="fas fa-chevron-down" id="advanced-icon"></i> Filtros Avançados
+                    </div>
+                    <button id="btn-reset" style="background-color: white; color: var(--text-muted); border: 1px solid var(--border); padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-eraser"></i> Limpar Filtros</button>
+                </div>
+                
+                <div class="advanced-filters" id="advanced-filters">
+                    <div class="filter-grid">
+                            <div class="filter-group">
+                            <label>Grupo</label>
+                            <select id="filter-grupo"><option value="">Todos</option></select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Subgrupo</label>
+                            <select id="filter-subgrupo" multiple size="4"></select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Forma de Organização</label>
+                            <select id="filter-forma" multiple size="4"></select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Sexo Permitido</label>
+                            <select id="filter-sexo">
+                                <option value="">Qualquer</option>
+                                <option value="M">Masculino</option>
+                                <option value="F">Feminino</option>
+                                <option value="I">Ambos (Indiferente)</option>
+                                <option value="N">Não se aplica</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Rúbrica</label>
+                            <input type="text" id="filter-rubrica" placeholder="Ex: 040034">
+                        </div>
+                        <div class="filter-group">
+                            <label>Idade Mín. (Meses)</label>
+                            <input type="number" id="filter-idade-min" placeholder="Ex: 12">
+                        </div>
+                        <div class="filter-group">
+                            <label>Idade Máx. (Meses)</label>
+                            <input type="number" id="filter-idade-max" placeholder="Ex: 130">
+                        </div>
+                        <div class="filter-group">
+                            <label>Qtd. Pontos</label>
+                            <input type="number" id="filter-pontos" placeholder="Ex: 100">
+                        </div>
+                        <div class="filter-group">
+                            <label>Máx. Execução</label>
+                            <input type="number" id="filter-max-exec" placeholder="Ex: 1">
+                        </div>
+                        <div class="filter-group">
+                            <label>Dias Perm.</label>
+                            <input type="number" id="filter-tempo-perm" placeholder="Ex: 5">
+                        </div>
+                    </div>
+                </div>
+        </div>
+
+        <div class="table-card">
+            <div class="loading-overlay" id="loading">
+                <i class="fas fa-spinner fa-spin"></i>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Procedimento</th>
+                            <th>Complexidade</th>
+                            <th>Financiamento</th>
+                            <th>Valor SA</th>
+                            <th>Valor Hospitalar</th>
+                            <th>Máx. Execução</th>
+                            <th>Dias Perm.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+    let filterData = {};
+
+    function toggleAdvancedFilters() {
+        const content = document.getElementById('advanced-filters');
+        const icon = document.getElementById('advanced-icon');
+        content.classList.toggle('active');
+        if (content.classList.contains('active')) {
+            icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+        } else {
+            icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+        }
+    }
+
+    // Format Currency
+    function formatCurrency(val) {
+        if (val === null || val === undefined || val === '') return 'R$ 0,00';
+        return 'R$ ' + parseFloat(val).toFixed(2).replace('.', ',');
+    }
+
+    // Fetch and populate filters
+    function loadFilters() {
+        fetch('/api/filters').then(res => res.json()).then(data => {
+            filterData = data;
+            
+            const grupoSelect = document.getElementById('filter-grupo');
+            data.grupos.forEach(g => {
+                grupoSelect.add(new Option(`${g.CO_GRUPO} - ${g.NO_GRUPO}`, g.CO_GRUPO));
+            });
+            
+            const complexSelect = document.getElementById('filter-complexidade');
+            data.complexidades.forEach(c => {
+                complexSelect.add(new Option(`${c.CO_COMPLEXIDADE} - ${c.NO_COMPLEXIDADE}`, c.CO_COMPLEXIDADE));
+            });
+            
+            const finanSelect = document.getElementById('filter-financiamento');
+            data.financiamentos.forEach(f => {
+                finanSelect.add(new Option(`${f.CO_FINANCIAMENTO} - ${f.NO_FINANCIAMENTO}`, f.CO_FINANCIAMENTO));
+            });
+            
+            restoreFilterState();
+            fetchData();
+        }).catch(e => {
+            console.error("Erro carregando filtros", e);
+        });
+    }
+
+    // Restore Filter State from sessionStorage
+    function restoreFilterState() {
+        const saved = sessionStorage.getItem('sigtap_filters');
+        if (!saved) return;
+        
+        const params = new URLSearchParams(saved);
+        document.getElementById('filter-codigo').value = params.get('codigo') || '';
+        document.getElementById('filter-nome').value = params.get('nome') || '';
+        document.getElementById('filter-complexidade').value = params.get('complexidade') || '';
+        document.getElementById('filter-financiamento').value = params.get('financiamento') || '';
+        
+        const grupo = params.get('grupo');
+        if (grupo) {
+            document.getElementById('filter-grupo').value = grupo;
+            
+            const subSelect = document.getElementById('filter-subgrupo');
+            subSelect.innerHTML = '';
+            filterData.subgrupos?.filter(s => s.CO_GRUPO === grupo).forEach(s => {
+                subSelect.add(new Option(`${s.CO_SUB_GRUPO} - ${s.NO_SUB_GRUPO}`, s.CO_SUB_GRUPO));
+            });
+            
+            const subgrupos = params.getAll('subgrupo');
+            Array.from(subSelect.options).forEach(o => {
+                if (subgrupos.includes(o.value)) o.selected = true;
+            });
+            
+            const formaSelect = document.getElementById('filter-forma');
+            formaSelect.innerHTML = '';
+            if (subgrupos.length > 0) {
+                filterData.formas?.filter(f => f.CO_GRUPO === grupo && subgrupos.includes(f.CO_SUB_GRUPO)).forEach(f => {
+                    formaSelect.add(new Option(`${f.CO_FORMA_ORGANIZACAO} - ${f.NO_FORMA_ORGANIZACAO}`, f.CO_FORMA_ORGANIZACAO));
+                });
+                const formas = params.getAll('forma');
+                Array.from(formaSelect.options).forEach(o => {
+                    if (formas.includes(o.value)) o.selected = true;
+                });
+            }
+        }
+        
+        document.getElementById('filter-sexo').value = params.get('sexo') || '';
+        document.getElementById('filter-rubrica').value = params.get('rubrica') || '';
+        document.getElementById('filter-idade-min').value = params.get('idade_min') || '';
+        document.getElementById('filter-idade-max').value = params.get('idade_max') || '';
+        document.getElementById('filter-pontos').value = params.get('pontos') || '';
+        document.getElementById('filter-max-exec').value = params.get('max_exec') || '';
+        document.getElementById('filter-tempo-perm').value = params.get('tempo_perm') || '';
+        
+        // Expand accordion if advanced filters are used
+        if (grupo || params.get('sexo') || params.get('rubrica') || params.get('idade_min') || params.get('idade_max') || params.get('pontos') || params.get('max_exec') || params.get('tempo_perm')) {
+            document.getElementById('advanced-filters').classList.add('active');
+        }
+    }
+
+    // Cascade Logic for Subgrupo and Forma
+    document.getElementById('filter-grupo').addEventListener('change', (e) => {
+        const grp = e.target.value;
+        const subSelect = document.getElementById('filter-subgrupo');
+        const formaSelect = document.getElementById('filter-forma');
+        
+        subSelect.innerHTML = '';
+        formaSelect.innerHTML = '';
+        
+        if (grp) {
+            filterData.subgrupos?.filter(s => s.CO_GRUPO === grp).forEach(s => {
+                subSelect.add(new Option(`${s.CO_SUB_GRUPO} - ${s.NO_SUB_GRUPO}`, s.CO_SUB_GRUPO));
+            });
+        }
+        fetchData();
+    });
+
+    document.getElementById('filter-subgrupo').addEventListener('change', (e) => {
+        const grp = document.getElementById('filter-grupo').value;
+        const subOptions = Array.from(document.getElementById('filter-subgrupo').selectedOptions).map(o => o.value);
+        const formaSelect = document.getElementById('filter-forma');
+        
+        formaSelect.innerHTML = '';
+        
+        if (grp && subOptions.length > 0) {
+            filterData.formas?.filter(f => f.CO_GRUPO === grp && subOptions.includes(f.CO_SUB_GRUPO)).forEach(f => {
+                formaSelect.add(new Option(`${f.CO_FORMA_ORGANIZACAO} - ${f.NO_FORMA_ORGANIZACAO}`, f.CO_FORMA_ORGANIZACAO));
+            });
+        }
+        fetchData();
+    });
+
+
+    let debounceTimer;
+    function debouncedFetch() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(fetchData, 300);
+    }
+
+    // Attach listeners
+    document.getElementById('btn-reset').addEventListener('click', () => {
+        sessionStorage.removeItem('sigtap_filters');
+        
+        document.querySelectorAll('input').forEach(el => el.value = '');
+        document.querySelectorAll('select').forEach(el => {
+            if (el.multiple) {
+                Array.from(el.options).forEach(o => o.selected = false);
+            } else {
+                el.value = '';
+            }
+        });
+        
+        document.getElementById('filter-subgrupo').innerHTML = '';
+        document.getElementById('filter-forma').innerHTML = '';
+        document.getElementById('advanced-filters').classList.remove('active');
+        
+        fetchData();
+    });
+
+    ['filter-codigo', 'filter-nome', 'filter-rubrica', 'filter-idade-min', 'filter-idade-max', 'filter-pontos', 'filter-max-exec', 'filter-tempo-perm'].forEach(id => {
+        document.getElementById(id).addEventListener('keyup', debouncedFetch);
+    });
+    
+    ['filter-complexidade', 'filter-financiamento', 'filter-sexo', 'filter-forma', 'filter-idade-min', 'filter-idade-max', 'filter-pontos', 'filter-max-exec', 'filter-tempo-perm'].forEach(id => {
+        document.getElementById(id).addEventListener('change', fetchData);
+    });
+
+    async function fetchData() {
+        document.getElementById('loading').style.display = 'flex';
+        
+        const params = new URLSearchParams();
+        params.append('codigo', document.getElementById('filter-codigo').value);
+        params.append('nome', document.getElementById('filter-nome').value);
+        params.append('complexidade', document.getElementById('filter-complexidade').value);
+        params.append('financiamento', document.getElementById('filter-financiamento').value);
+        params.append('grupo', document.getElementById('filter-grupo').value);
+        
+        Array.from(document.getElementById('filter-subgrupo').selectedOptions).forEach(o => {
+            if(o.value) params.append('subgrupo', o.value);
+        });
+        
+        Array.from(document.getElementById('filter-forma').selectedOptions).forEach(o => {
+            if(o.value) params.append('forma', o.value);
+        });
+
+        params.append('sexo', document.getElementById('filter-sexo').value);
+        params.append('rubrica', document.getElementById('filter-rubrica').value);
+        params.append('idade_min', document.getElementById('filter-idade-min').value);
+        params.append('idade_max', document.getElementById('filter-idade-max').value);
+        params.append('pontos', document.getElementById('filter-pontos').value);
+        params.append('max_exec', document.getElementById('filter-max-exec').value);
+        params.append('tempo_perm', document.getElementById('filter-tempo-perm').value);
+
+        sessionStorage.setItem('sigtap_filters', params.toString());
+
+        try {
+            const res = await fetch(`/api/procedimentos?${params.toString()}`);
+            const data = await res.json();
+            
+            document.getElementById('kpi-count').innerText = data.length;
+            
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            
+            const compMap = {'0': '0 - NA', '1': '1 - AB', '2': '2 - MC', '3': '3 - AC'};
+            
+            // Render rows
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><a href="/procedimento/${row.CO_PROCEDIMENTO}">${row.CO_PROCEDIMENTO}</a></td>
+                    <td>${row.NO_PROCEDIMENTO}</td>
+                    <td>${compMap[row.TP_COMPLEXIDADE] || row.TP_COMPLEXIDADE}</td>
+                    <td>${row.CO_FINANCIAMENTO}</td>
+                    <td>${formatCurrency(row.VL_SA)}</td>
+                    <td>${formatCurrency(row.VL_H)}</td>
+                    <td>${row.QT_MAXIMA_EXECUCAO !== null && row.QT_MAXIMA_EXECUCAO != 9999 ? row.QT_MAXIMA_EXECUCAO : ''}</td>
+                    <td>${row.QT_DIAS_PERMANENCIA !== null && row.QT_DIAS_PERMANENCIA != 9999 ? row.QT_DIAS_PERMANENCIA : ''}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+        } catch(e) {
+            console.error(e);
+        } finally {
+            document.getElementById('loading').style.display = 'none';
+        }
+    }
+
+    // Init
+    window.onload = async () => {
+        await loadFilters();
+        fetchData(); // initial load
+    };
+    </script>
+</body>
+</html>
