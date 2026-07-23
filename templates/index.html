@@ -288,7 +288,7 @@
                 
                 <div class="advanced-filters" id="advanced-filters">
                     <div class="filter-grid">
-                            <div class="filter-group">
+                        <div class="filter-group">
                             <label>Grupo</label>
                             <select id="filter-grupo"><option value="">Todos</option></select>
                         </div>
@@ -301,6 +301,22 @@
                             <select id="filter-forma" multiple size="4"></select>
                         </div>
                         <div class="filter-group">
+                            <label>Instrumento de Registro</label>
+                            <select id="filter-registro"><option value="">Todos</option></select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Rúbrica</label>
+                            <select id="filter-rubrica"><option value="">Todas</option></select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Busca por CID-10</label>
+                            <input type="text" id="filter-cid" placeholder="Ex: I10 ou Hipertensão">
+                        </div>
+                        <div class="filter-group">
+                            <label>CBO / Ocupação</label>
+                            <input type="text" id="filter-ocupacao" placeholder="Ex: 225125 ou Médico">
+                        </div>
+                        <div class="filter-group">
                             <label>Sexo Permitido</label>
                             <select id="filter-sexo">
                                 <option value="">Qualquer</option>
@@ -309,10 +325,6 @@
                                 <option value="I">Ambos (Indiferente)</option>
                                 <option value="N">Não se aplica</option>
                             </select>
-                        </div>
-                        <div class="filter-group">
-                            <label>Rúbrica</label>
-                            <input type="text" id="filter-rubrica" placeholder="Ex: 040034">
                         </div>
                         <div class="filter-group">
                             <label>Idade Mín. (Meses)</label>
@@ -391,13 +403,23 @@
             filterData = data;
             
             const grupoSelect = document.getElementById('filter-grupo');
-            data.grupos.forEach(g => {
+            data.grupos?.forEach(g => {
                 grupoSelect.add(new Option(`${g.CO_GRUPO} - ${g.NO_GRUPO}`, g.CO_GRUPO));
             });
             
             const finanSelect = document.getElementById('filter-financiamento');
             data.financiamentos?.forEach(f => {
                 finanSelect.add(new Option(`${f.CO_FINANCIAMENTO} - ${f.NO_FINANCIAMENTO}`, f.CO_FINANCIAMENTO));
+            });
+
+            const rubricaSelect = document.getElementById('filter-rubrica');
+            data.rubricas?.forEach(r => {
+                rubricaSelect.add(new Option(`${r.CO_RUBRICA} - ${r.NO_RUBRICA}`, r.CO_RUBRICA));
+            });
+
+            const registroSelect = document.getElementById('filter-registro');
+            data.registros?.forEach(reg => {
+                registroSelect.add(new Option(`${reg.CO_REGISTRO} - ${reg.NO_REGISTRO}`, reg.CO_REGISTRO));
             });
             
             restoreFilterState();
@@ -447,7 +469,10 @@
         }
         
         document.getElementById('filter-sexo').value = params.get('sexo') || '';
+        document.getElementById('filter-registro').value = params.get('registro') || '';
         document.getElementById('filter-rubrica').value = params.get('rubrica') || '';
+        document.getElementById('filter-cid').value = params.get('cid') || '';
+        document.getElementById('filter-ocupacao').value = params.get('ocupacao') || '';
         document.getElementById('filter-idade-min').value = params.get('idade_min') || '';
         document.getElementById('filter-idade-max').value = params.get('idade_max') || '';
         document.getElementById('filter-pontos').value = params.get('pontos') || '';
@@ -455,7 +480,7 @@
         document.getElementById('filter-tempo-perm').value = params.get('tempo_perm') || '';
         
         // Expand accordion if advanced filters are used
-        if (grupo || params.get('sexo') || params.get('rubrica') || params.get('idade_min') || params.get('idade_max') || params.get('pontos') || params.get('max_exec') || params.get('tempo_perm')) {
+        if (grupo || params.get('sexo') || params.get('registro') || params.get('rubrica') || params.get('cid') || params.get('ocupacao') || params.get('idade_min') || params.get('idade_max') || params.get('pontos') || params.get('max_exec') || params.get('tempo_perm')) {
             document.getElementById('advanced-filters').classList.add('active');
         }
     }
@@ -519,11 +544,11 @@
         fetchData();
     });
 
-    ['filter-codigo', 'filter-nome', 'filter-rubrica', 'filter-idade-min', 'filter-idade-max', 'filter-pontos', 'filter-max-exec', 'filter-tempo-perm'].forEach(id => {
+    ['filter-codigo', 'filter-nome', 'filter-cid', 'filter-ocupacao', 'filter-idade-min', 'filter-idade-max', 'filter-pontos', 'filter-max-exec', 'filter-tempo-perm'].forEach(id => {
         document.getElementById(id).addEventListener('keyup', debouncedFetch);
     });
     
-    ['filter-complexidade', 'filter-financiamento', 'filter-sexo', 'filter-forma', 'filter-idade-min', 'filter-idade-max', 'filter-pontos', 'filter-max-exec', 'filter-tempo-perm'].forEach(id => {
+    ['filter-complexidade', 'filter-financiamento', 'filter-registro', 'filter-rubrica', 'filter-sexo', 'filter-forma', 'filter-idade-min', 'filter-idade-max', 'filter-pontos', 'filter-max-exec', 'filter-tempo-perm'].forEach(id => {
         document.getElementById(id).addEventListener('change', fetchData);
     });
 
@@ -545,8 +570,11 @@
             if(o.value) params.append('forma', o.value);
         });
 
-        params.append('sexo', document.getElementById('filter-sexo').value);
+        params.append('registro', document.getElementById('filter-registro').value);
         params.append('rubrica', document.getElementById('filter-rubrica').value);
+        params.append('cid', document.getElementById('filter-cid').value);
+        params.append('ocupacao', document.getElementById('filter-ocupacao').value);
+        params.append('sexo', document.getElementById('filter-sexo').value);
         params.append('idade_min', document.getElementById('filter-idade-min').value);
         params.append('idade_max', document.getElementById('filter-idade-max').value);
         params.append('pontos', document.getElementById('filter-pontos').value);

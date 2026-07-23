@@ -208,9 +208,11 @@
             </div>
             {% endif %}
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
                 <div><strong>Complexidade:</strong> {{ proc.TP_COMPLEXIDADE }}</div>
-                <div><strong>Financiamento:</strong> {{ proc.CO_FINANCIAMENTO }}</div>
+                <div><strong>Financiamento:</strong> {{ proc.CO_FINANCIAMENTO }}{% if proc.NO_FINANCIAMENTO %} - {{ proc.NO_FINANCIAMENTO }}{% endif %}</div>
+                {% if proc.CO_RUBRICA %}
+                <div><strong>Rúbrica:</strong> {{ proc.CO_RUBRICA }}{% if proc.NO_RUBRICA %} - {{ proc.NO_RUBRICA }}{% endif %}</div>
+                {% endif %}
                 <div><strong>Valor SA:</strong> R$ {{ "%.2f"|format(proc.VL_SA) }}</div>
                 <div><strong>Valor Hosp.:</strong> R$ {{ "%.2f"|format(proc.VL_H) }}</div>
                 <div><strong>Sexo:</strong> {{ proc.TP_SEXO }}</div>

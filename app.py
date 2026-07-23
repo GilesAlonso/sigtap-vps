@@ -158,20 +158,28 @@ def api_filters():
     filters = {}
     
     try:
-        filters['financiamentos'] = [dict(row) for row in conn.execute("SELECT CO_FINANCIAMENTO, NO_FINANCIAMENTO FROM tb_financiamento")]
+        filters['financiamentos'] = [dict(row) for row in conn.execute("SELECT CO_FINANCIAMENTO, NO_FINANCIAMENTO FROM tb_financiamento ORDER BY CO_FINANCIAMENTO")]
     except: filters['financiamentos'] = []
         
     try:
-        filters['grupos'] = [dict(row) for row in conn.execute("SELECT CO_GRUPO, NO_GRUPO FROM tb_grupo")]
+        filters['grupos'] = [dict(row) for row in conn.execute("SELECT CO_GRUPO, NO_GRUPO FROM tb_grupo ORDER BY CO_GRUPO")]
     except: filters['grupos'] = []
         
     try:
-        filters['subgrupos'] = [dict(row) for row in conn.execute("SELECT CO_GRUPO, CO_SUB_GRUPO, NO_SUB_GRUPO FROM tb_sub_grupo")]
+        filters['subgrupos'] = [dict(row) for row in conn.execute("SELECT CO_GRUPO, CO_SUB_GRUPO, NO_SUB_GRUPO FROM tb_sub_grupo ORDER BY CO_SUB_GRUPO")]
     except: filters['subgrupos'] = []
         
     try:
-        filters['formas'] = [dict(row) for row in conn.execute("SELECT CO_GRUPO, CO_SUB_GRUPO, CO_FORMA_ORGANIZACAO, NO_FORMA_ORGANIZACAO FROM tb_forma_organizacao")]
+        filters['formas'] = [dict(row) for row in conn.execute("SELECT CO_GRUPO, CO_SUB_GRUPO, CO_FORMA_ORGANIZACAO, NO_FORMA_ORGANIZACAO FROM tb_forma_organizacao ORDER BY CO_FORMA_ORGANIZACAO")]
     except: filters['formas'] = []
+
+    try:
+        filters['rubricas'] = [dict(row) for row in conn.execute("SELECT CO_RUBRICA, NO_RUBRICA FROM tb_rubrica ORDER BY CO_RUBRICA")]
+    except: filters['rubricas'] = []
+
+    try:
+        filters['registros'] = [dict(row) for row in conn.execute("SELECT CO_REGISTRO, NO_REGISTRO FROM tb_registro ORDER BY CO_REGISTRO")]
+    except: filters['registros'] = []
 
     return jsonify(filters)
 
@@ -238,11 +246,26 @@ def api_procedimentos():
     if sexo:
         query += " AND TP_SEXO = ?"
         params.append(sexo)
+
+    registro = request.args.get('registro', '')
+    if registro:
+        query += " AND CO_PROCEDIMENTO IN (SELECT CO_PROCEDIMENTO FROM rl_procedimento_registro WHERE CO_REGISTRO = ?)"
+        params.append(registro)
         
     rubrica = request.args.get('rubrica', '')
     if rubrica:
         query += " AND CO_RUBRICA = ?"
         params.append(rubrica)
+
+    cid = request.args.get('cid', '')
+    if cid:
+        query += " AND CO_PROCEDIMENTO IN (SELECT r.CO_PROCEDIMENTO FROM rl_procedimento_cid r JOIN tb_cid c ON r.CO_CID = c.CO_CID WHERE c.CO_CID LIKE ? OR c.NO_CID LIKE ?)"
+        params.extend([f"%{cid}%", f"%{cid}%"])
+
+    ocupacao = request.args.get('ocupacao', '')
+    if ocupacao:
+        query += " AND CO_PROCEDIMENTO IN (SELECT r.CO_PROCEDIMENTO FROM rl_procedimento_ocupacao r JOIN tb_ocupacao o ON r.CO_OCUPACAO = o.CO_OCUPACAO WHERE o.CO_OCUPACAO LIKE ? OR o.NO_OCUPACAO LIKE ?)"
+        params.extend([f"%{ocupacao}%", f"%{ocupacao}%"])
         
     idade_min = request.args.get('idade_min', '')
     if idade_min:
@@ -281,7 +304,14 @@ def procedimento_detail(codigo):
         
     conn = get_db()
     
-    proc_principal = conn.execute("SELECT * FROM tb_procedimento WHERE CO_PROCEDIMENTO = ?", (codigo,)).fetchone()
+    proc_principal = conn.execute("""
+        SELECT p.*, f.NO_FINANCIAMENTO, r.NO_RUBRICA 
+        FROM tb_procedimento p
+        LEFT JOIN tb_financiamento f ON p.CO_FINANCIAMENTO = f.CO_FINANCIAMENTO
+        LEFT JOIN tb_rubrica r ON p.CO_RUBRICA = r.CO_RUBRICA
+        WHERE p.CO_PROCEDIMENTO = ?
+    """, (codigo,)).fetchone()
+    
     if not proc_principal:
         return f"Procedimento {codigo} não encontrado.", 404
     
@@ -297,27 +327,63 @@ def procedimento_detail(codigo):
 
     related_data = {}
     
-    # Busca dinamicamente todas as tabelas relacionais do SQLite
+    # Custom treatment for CID to show ST_PRINCIPAL
+    try:
+        cid_rows = conn.execute("""
+            SELECT c.CO_CID AS "Código CID", c.NO_CID AS "Descrição do CID", 
+                   CASE WHEN r.ST_PRINCIPAL = 'P' THEN 'Diagnóstico Principal' ELSE 'Diagnóstico Secundário' END AS "Tipo Diagnóstico"
+            FROM tb_cid c
+            JOIN rl_procedimento_cid r ON c.CO_CID = r.CO_CID
+            WHERE r.CO_PROCEDIMENTO = ?
+            ORDER BY r.ST_PRINCIPAL DESC, c.CO_CID
+        """, (codigo,)).fetchall()
+        if cid_rows:
+            related_data['Cid Permitidos'] = {
+                'header': list(dict(cid_rows[0]).keys()),
+                'rows': [list(dict(row).values()) for row in cid_rows]
+            }
+    except Exception as e:
+        logging.error(f"Erro processando CIDs: {e}")
+
+    # Custom treatment for Procedimentos Compatíveis
+    try:
+        comp_rows = conn.execute("""
+            SELECT r.CO_PROCEDIMENTO_COMPATIVEL AS "Código Compatível", 
+                   p.NO_PROCEDIMENTO AS "Nome Procedimento", 
+                   CASE WHEN r.TP_COMPATIBILIDADE = '1' THEN 'Compatível' ELSE 'Excludente' END AS "Tipo Compatibilidade",
+                   r.QT_PERMITIDA AS "Qtd. Permitida"
+            FROM rl_procedimento_compativel r
+            JOIN tb_procedimento p ON r.CO_PROCEDIMENTO_COMPATIVEL = p.CO_PROCEDIMENTO
+            WHERE r.CO_PROCEDIMENTO_PRINCIPAL = ?
+        """, (codigo,)).fetchall()
+        if comp_rows:
+            related_data['Procedimentos Compativeis'] = {
+                'header': list(dict(comp_rows[0]).keys()),
+                'rows': [list(dict(row).values()) for row in comp_rows]
+            }
+    except Exception as e:
+        logging.error(f"Erro processando procedimentos compatíveis: {e}")
+
+    # Busca dinamicamente todas as outras tabelas relacionais do SQLite
     try:
         tables = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'rl_procedimento_%'").fetchall()
         
         for table_row in tables:
             rl_table = table_row['name']
+            if rl_table in ('rl_procedimento_cid', 'rl_procedimento_compativel'):
+                continue
+                
             target_suffix = rl_table.replace('rl_procedimento_', '')
             target_tb = f"tb_{target_suffix}"
             
-            # Descobre a chave primária da tabela alvo verificando suas colunas
-            # Assumimos que a chave que liga a RL com a TB é a coluna que começa com CO_ e não é CO_PROCEDIMENTO
             columns_info = conn.execute(f"PRAGMA table_info({rl_table})").fetchall()
             key_column = next((col['name'] for col in columns_info if col['name'] != 'CO_PROCEDIMENTO' and col['name'].startswith('CO_')), None)
             
             if not key_column: continue
             
-            # Verifica se a tabela alvo existe
             tb_exists = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = ?", (target_tb,)).fetchone()
             if not tb_exists: continue
             
-            # Executa o JOIN
             join_query = f"""
                 SELECT t.* FROM {target_tb} t
                 JOIN {rl_table} r ON t.{key_column} = r.{key_column}
