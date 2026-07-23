@@ -395,13 +395,8 @@
                 grupoSelect.add(new Option(`${g.CO_GRUPO} - ${g.NO_GRUPO}`, g.CO_GRUPO));
             });
             
-            const complexSelect = document.getElementById('filter-complexidade');
-            data.complexidades.forEach(c => {
-                complexSelect.add(new Option(`${c.CO_COMPLEXIDADE} - ${c.NO_COMPLEXIDADE}`, c.CO_COMPLEXIDADE));
-            });
-            
             const finanSelect = document.getElementById('filter-financiamento');
-            data.financiamentos.forEach(f => {
+            data.financiamentos?.forEach(f => {
                 finanSelect.add(new Option(`${f.CO_FINANCIAMENTO} - ${f.NO_FINANCIAMENTO}`, f.CO_FINANCIAMENTO));
             });
             
