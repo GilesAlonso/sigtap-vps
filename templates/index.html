@@ -476,8 +476,10 @@
     }
 
     // Fetch and populate filters
-    function loadFilters() {
-        fetch('/api/filters').then(res => res.json()).then(data => {
+    async function loadFilters() {
+        try {
+            const res = await fetch('/api/filters');
+            const data = await res.json();
             filterData = data;
             
             const grupoSelect = document.getElementById('filter-grupo');
@@ -524,12 +526,9 @@
             data.detalhes?.forEach(d => {
                 detalheSelect.add(new Option(`${d.CO_DETALHE} - ${d.NO_DETALHE}`, d.CO_DETALHE));
             });
-            
-            restoreFilterState();
-            fetchData();
-        }).catch(e => {
+        } catch(e) {
             console.error("Erro carregando filtros", e);
-        });
+        }
     }
 
     // Restore Filter State from sessionStorage
@@ -733,7 +732,8 @@
     // Init
     window.onload = async () => {
         await loadFilters();
-        fetchData(); // initial load
+        restoreFilterState();
+        await fetchData();
     };
     </script>
 </body>
