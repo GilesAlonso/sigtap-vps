@@ -7,6 +7,7 @@ Type=oneshot
 User=ubuntu
 Group=www-data
 WorkingDirectory=/home/ubuntu/Sigtap
+Environment="PATH=/home/ubuntu/.local/bin:/usr/bin"
 
 # Executa o script updater.py
-ExecStart=/home/ubuntu/.cargo/bin/uv run updater.py
+ExecStart=/home/ubuntu/.local/bin/uv run updater.py
