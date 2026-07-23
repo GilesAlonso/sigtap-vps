@@ -167,6 +167,48 @@
             display: block;
         }
 
+        .advanced-flex-container {
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+
+        .hierarchy-column {
+            flex: 0 0 340px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .hierarchy-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .attributes-column {
+            flex: 1;
+        }
+
+        .attributes-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(120px, 1fr));
+            gap: 0.75rem;
+        }
+
+        @media (max-width: 1280px) {
+            .advanced-flex-container {
+                flex-direction: column;
+            }
+            .hierarchy-column {
+                flex: 1;
+                width: 100%;
+            }
+            .attributes-grid {
+                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            }
+        }
+
         /* Table */
         .table-card {
             background-color: var(--card-bg);
@@ -287,64 +329,77 @@
                 </div>
                 
                 <div class="advanced-filters" id="advanced-filters">
-                    <div class="filter-grid">
-                        <div class="filter-group">
-                            <label>Grupo</label>
-                            <select id="filter-grupo"><option value="">Todos</option></select>
+                    <div class="advanced-flex-container">
+                        <!-- Coluna Esquerda: Taxonomia Hierárquica -->
+                        <div class="hierarchy-column">
+                            <div class="filter-group">
+                                <label>Grupo</label>
+                                <select id="filter-grupo"><option value="">Todos</option></select>
+                            </div>
+                            <div class="hierarchy-row">
+                                <div class="filter-group">
+                                    <label>Subgrupo</label>
+                                    <select id="filter-subgrupo" multiple size="4"></select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Forma de Organização</label>
+                                    <select id="filter-forma" multiple size="4"></select>
+                                </div>
+                            </div>
                         </div>
-                        <div class="filter-group">
-                            <label>Subgrupo</label>
-                            <select id="filter-subgrupo" multiple size="4"></select>
-                        </div>
-                        <div class="filter-group">
-                            <label>Forma de Organização</label>
-                            <select id="filter-forma" multiple size="4"></select>
-                        </div>
-                        <div class="filter-group">
-                            <label>Instrumento de Registro</label>
-                            <select id="filter-registro"><option value="">Todos</option></select>
-                        </div>
-                        <div class="filter-group">
-                            <label>Rúbrica</label>
-                            <select id="filter-rubrica"><option value="">Todas</option></select>
-                        </div>
-                        <div class="filter-group">
-                            <label>Busca por CID-10</label>
-                            <input type="text" id="filter-cid" placeholder="Ex: I10 ou Hipertensão">
-                        </div>
-                        <div class="filter-group">
-                            <label>CBO / Ocupação</label>
-                            <input type="text" id="filter-ocupacao" placeholder="Ex: 225125 ou Médico">
-                        </div>
-                        <div class="filter-group">
-                            <label>Sexo Permitido</label>
-                            <select id="filter-sexo">
-                                <option value="">Qualquer</option>
-                                <option value="M">Masculino</option>
-                                <option value="F">Feminino</option>
-                                <option value="I">Ambos (Indiferente)</option>
-                                <option value="N">Não se aplica</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label>Idade Mín. (Meses)</label>
-                            <input type="number" id="filter-idade-min" placeholder="Ex: 12">
-                        </div>
-                        <div class="filter-group">
-                            <label>Idade Máx. (Meses)</label>
-                            <input type="number" id="filter-idade-max" placeholder="Ex: 130">
-                        </div>
-                        <div class="filter-group">
-                            <label>Qtd. Pontos</label>
-                            <input type="number" id="filter-pontos" placeholder="Ex: 100">
-                        </div>
-                        <div class="filter-group">
-                            <label>Máx. Execução</label>
-                            <input type="number" id="filter-max-exec" placeholder="Ex: 1">
-                        </div>
-                        <div class="filter-group">
-                            <label>Dias Perm.</label>
-                            <input type="number" id="filter-tempo-perm" placeholder="Ex: 5">
+
+                        <!-- Coluna Direita: Grid de Atributos (2 Linhas x 5 Colunas) -->
+                        <div class="attributes-column">
+                            <div class="attributes-grid">
+                                <!-- Linha 1 -->
+                                <div class="filter-group">
+                                    <label>Instrumento de Registro</label>
+                                    <select id="filter-registro"><option value="">Todos</option></select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Rúbrica</label>
+                                    <select id="filter-rubrica"><option value="">Todas</option></select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Busca por CID-10</label>
+                                    <input type="text" id="filter-cid" placeholder="Ex: I10 ou Hipertensão">
+                                </div>
+                                <div class="filter-group">
+                                    <label>CBO / Ocupação</label>
+                                    <input type="text" id="filter-ocupacao" placeholder="Ex: 225125 ou Médico">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Sexo Permitido</label>
+                                    <select id="filter-sexo">
+                                        <option value="">Qualquer</option>
+                                        <option value="M">Masculino</option>
+                                        <option value="F">Feminino</option>
+                                        <option value="I">Ambos (Indiferente)</option>
+                                        <option value="N">Não se aplica</option>
+                                    </select>
+                                </div>
+                                <!-- Linha 2 -->
+                                <div class="filter-group">
+                                    <label>Idade Mín. (Meses)</label>
+                                    <input type="number" id="filter-idade-min" placeholder="Ex: 12">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Idade Máx. (Meses)</label>
+                                    <input type="number" id="filter-idade-max" placeholder="Ex: 130">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Qtd. Pontos</label>
+                                    <input type="number" id="filter-pontos" placeholder="Ex: 100">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Máx. Execução</label>
+                                    <input type="number" id="filter-max-exec" placeholder="Ex: 1">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Dias Perm.</label>
+                                    <input type="number" id="filter-tempo-perm" placeholder="Ex: 5">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
