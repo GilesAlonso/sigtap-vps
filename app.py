@@ -181,6 +181,26 @@ def api_filters():
         filters['registros'] = [dict(row) for row in conn.execute("SELECT CO_REGISTRO, NO_REGISTRO FROM tb_registro ORDER BY CO_REGISTRO")]
     except: filters['registros'] = []
 
+    try:
+        filters['leitos'] = [dict(row) for row in conn.execute("SELECT CO_TIPO_LEITO, NO_TIPO_LEITO FROM tb_tipo_leito ORDER BY CO_TIPO_LEITO")]
+    except: filters['leitos'] = []
+
+    try:
+        filters['redes'] = [dict(row) for row in conn.execute("SELECT CO_COMPONENTE_REDE, NO_COMPONENTE_REDE FROM tb_componente_rede ORDER BY CO_COMPONENTE_REDE")]
+    except: filters['redes'] = []
+
+    try:
+        filters['habilitacoes'] = [dict(row) for row in conn.execute("SELECT CO_HABILITACAO, NO_HABILITACAO FROM tb_habilitacao ORDER BY CO_HABILITACAO")]
+    except: filters['habilitacoes'] = []
+
+    try:
+        filters['servicos'] = [dict(row) for row in conn.execute("SELECT CO_SERVICO, NO_SERVICO FROM tb_servico ORDER BY CO_SERVICO")]
+    except: filters['servicos'] = []
+
+    try:
+        filters['detalhes'] = [dict(row) for row in conn.execute("SELECT CO_DETALHE, NO_DETALHE FROM tb_detalhe ORDER BY CO_DETALHE")]
+    except: filters['detalhes'] = []
+
     return jsonify(filters)
 
 
@@ -266,6 +286,31 @@ def api_procedimentos():
     if ocupacao:
         query += " AND CO_PROCEDIMENTO IN (SELECT r.CO_PROCEDIMENTO FROM rl_procedimento_ocupacao r JOIN tb_ocupacao o ON r.CO_OCUPACAO = o.CO_OCUPACAO WHERE o.CO_OCUPACAO LIKE ? OR o.NO_OCUPACAO LIKE ?)"
         params.extend([f"%{ocupacao}%", f"%{ocupacao}%"])
+
+    leito = request.args.get('leito', '')
+    if leito:
+        query += " AND CO_PROCEDIMENTO IN (SELECT CO_PROCEDIMENTO FROM rl_procedimento_leito WHERE CO_TIPO_LEITO = ?)"
+        params.append(leito)
+
+    rede = request.args.get('rede', '')
+    if rede:
+        query += " AND CO_PROCEDIMENTO IN (SELECT CO_PROCEDIMENTO FROM rl_procedimento_comp_rede WHERE CO_COMPONENTE_REDE = ?)"
+        params.append(rede)
+
+    habilitacao = request.args.get('habilitacao', '')
+    if habilitacao:
+        query += " AND CO_PROCEDIMENTO IN (SELECT CO_PROCEDIMENTO FROM rl_procedimento_habilitacao WHERE CO_HABILITACAO = ?)"
+        params.append(habilitacao)
+
+    servico = request.args.get('servico', '')
+    if servico:
+        query += " AND CO_PROCEDIMENTO IN (SELECT CO_PROCEDIMENTO FROM rl_procedimento_servico WHERE CO_SERVICO = ?)"
+        params.append(servico)
+
+    detalhe = request.args.get('detalhe', '')
+    if detalhe:
+        query += " AND CO_PROCEDIMENTO IN (SELECT CO_PROCEDIMENTO FROM rl_procedimento_detalhe WHERE CO_DETALHE = ?)"
+        params.append(detalhe)
         
     idade_min = request.args.get('idade_min', '')
     if idade_min:

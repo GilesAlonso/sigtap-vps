@@ -348,16 +348,16 @@
                             </div>
                         </div>
 
-                        <!-- Coluna Direita: Grid de Atributos (2 Linhas x 5 Colunas) -->
+                        <!-- Coluna Direita: Grid de Atributos e Planejamento em Saúde -->
                         <div class="attributes-column">
                             <div class="attributes-grid">
-                                <!-- Linha 1 -->
+                                <!-- Linha 1: Cobrança e Registro -->
                                 <div class="filter-group">
                                     <label>Instrumento de Registro</label>
                                     <select id="filter-registro"><option value="">Todos</option></select>
                                 </div>
                                 <div class="filter-group">
-                                    <label>Rúbrica</label>
+                                    <label>Rúbrica Orçamentária</label>
                                     <select id="filter-rubrica"><option value="">Todas</option></select>
                                 </div>
                                 <div class="filter-group">
@@ -378,7 +378,30 @@
                                         <option value="N">Não se aplica</option>
                                     </select>
                                 </div>
-                                <!-- Linha 2 -->
+                                
+                                <!-- Linha 2: Planejamento & Redes de Saúde -->
+                                <div class="filter-group">
+                                    <label>Rede de Atenção à Saúde</label>
+                                    <select id="filter-rede"><option value="">Todas as Redes</option></select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Serviço Especializado CNES</label>
+                                    <select id="filter-servico"><option value="">Todos os Serviços</option></select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Habilitação Exigida</label>
+                                    <select id="filter-habilitacao"><option value="">Todas as Habilitações</option></select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Tipo de Leito</label>
+                                    <select id="filter-leito"><option value="">Todos os Leitos</option></select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Regra / Detalhe Operacional</label>
+                                    <select id="filter-detalhe"><option value="">Todas as Regras</option></select>
+                                </div>
+
+                                <!-- Linha 3: Parâmetros Operacionais -->
                                 <div class="filter-group">
                                     <label>Idade Mín. (Meses)</label>
                                     <input type="number" id="filter-idade-min" placeholder="Ex: 12">
@@ -418,13 +441,13 @@
                             <th>Complexidade</th>
                             <th>Financiamento</th>
                             <th>Valor SA</th>
-                            <th>Valor Hospitalar</th>
-                            <th>Máx. Execução</th>
+                            <th>Valor Hosp</th>
+                            <th>Máx. Exec.</th>
                             <th>Dias Perm.</th>
                         </tr>
                     </thead>
                     <tbody id="table-body">
-                        <!-- Populated by JS -->
+                        <!-- Content dynamically inserted -->
                     </tbody>
                 </table>
             </div>
@@ -475,6 +498,31 @@
             const registroSelect = document.getElementById('filter-registro');
             data.registros?.forEach(reg => {
                 registroSelect.add(new Option(`${reg.CO_REGISTRO} - ${reg.NO_REGISTRO}`, reg.CO_REGISTRO));
+            });
+
+            const redeSelect = document.getElementById('filter-rede');
+            data.redes?.forEach(r => {
+                redeSelect.add(new Option(`${r.CO_COMPONENTE_REDE} - ${r.NO_COMPONENTE_REDE}`, r.CO_COMPONENTE_REDE));
+            });
+
+            const servicoSelect = document.getElementById('filter-servico');
+            data.servicos?.forEach(s => {
+                servicoSelect.add(new Option(`${s.CO_SERVICO} - ${s.NO_SERVICO}`, s.CO_SERVICO));
+            });
+
+            const habSelect = document.getElementById('filter-habilitacao');
+            data.habilitacoes?.forEach(h => {
+                habSelect.add(new Option(`${h.CO_HABILITACAO} - ${h.NO_HABILITACAO}`, h.CO_HABILITACAO));
+            });
+
+            const leitoSelect = document.getElementById('filter-leito');
+            data.leitos?.forEach(l => {
+                leitoSelect.add(new Option(`${l.CO_TIPO_LEITO} - ${l.NO_TIPO_LEITO}`, l.CO_TIPO_LEITO));
+            });
+
+            const detalheSelect = document.getElementById('filter-detalhe');
+            data.detalhes?.forEach(d => {
+                detalheSelect.add(new Option(`${d.CO_DETALHE} - ${d.NO_DETALHE}`, d.CO_DETALHE));
             });
             
             restoreFilterState();
@@ -528,6 +576,11 @@
         document.getElementById('filter-rubrica').value = params.get('rubrica') || '';
         document.getElementById('filter-cid').value = params.get('cid') || '';
         document.getElementById('filter-ocupacao').value = params.get('ocupacao') || '';
+        document.getElementById('filter-rede').value = params.get('rede') || '';
+        document.getElementById('filter-servico').value = params.get('servico') || '';
+        document.getElementById('filter-habilitacao').value = params.get('habilitacao') || '';
+        document.getElementById('filter-leito').value = params.get('leito') || '';
+        document.getElementById('filter-detalhe').value = params.get('detalhe') || '';
         document.getElementById('filter-idade-min').value = params.get('idade_min') || '';
         document.getElementById('filter-idade-max').value = params.get('idade_max') || '';
         document.getElementById('filter-pontos').value = params.get('pontos') || '';
@@ -535,7 +588,7 @@
         document.getElementById('filter-tempo-perm').value = params.get('tempo_perm') || '';
         
         // Expand accordion if advanced filters are used
-        if (grupo || params.get('sexo') || params.get('registro') || params.get('rubrica') || params.get('cid') || params.get('ocupacao') || params.get('idade_min') || params.get('idade_max') || params.get('pontos') || params.get('max_exec') || params.get('tempo_perm')) {
+        if (grupo || params.get('sexo') || params.get('registro') || params.get('rubrica') || params.get('cid') || params.get('ocupacao') || params.get('rede') || params.get('servico') || params.get('habilitacao') || params.get('leito') || params.get('detalhe') || params.get('idade_min') || params.get('idade_max') || params.get('pontos') || params.get('max_exec') || params.get('tempo_perm')) {
             document.getElementById('advanced-filters').classList.add('active');
         }
     }
@@ -603,7 +656,7 @@
         document.getElementById(id).addEventListener('keyup', debouncedFetch);
     });
     
-    ['filter-complexidade', 'filter-financiamento', 'filter-registro', 'filter-rubrica', 'filter-sexo', 'filter-forma', 'filter-idade-min', 'filter-idade-max', 'filter-pontos', 'filter-max-exec', 'filter-tempo-perm'].forEach(id => {
+    ['filter-complexidade', 'filter-financiamento', 'filter-registro', 'filter-rubrica', 'filter-sexo', 'filter-rede', 'filter-servico', 'filter-habilitacao', 'filter-leito', 'filter-detalhe', 'filter-forma', 'filter-idade-min', 'filter-idade-max', 'filter-pontos', 'filter-max-exec', 'filter-tempo-perm'].forEach(id => {
         document.getElementById(id).addEventListener('change', fetchData);
     });
 
@@ -630,6 +683,11 @@
         params.append('cid', document.getElementById('filter-cid').value);
         params.append('ocupacao', document.getElementById('filter-ocupacao').value);
         params.append('sexo', document.getElementById('filter-sexo').value);
+        params.append('rede', document.getElementById('filter-rede').value);
+        params.append('servico', document.getElementById('filter-servico').value);
+        params.append('habilitacao', document.getElementById('filter-habilitacao').value);
+        params.append('leito', document.getElementById('filter-leito').value);
+        params.append('detalhe', document.getElementById('filter-detalhe').value);
         params.append('idade_min', document.getElementById('filter-idade-min').value);
         params.append('idade_max', document.getElementById('filter-idade-max').value);
         params.append('pontos', document.getElementById('filter-pontos').value);
