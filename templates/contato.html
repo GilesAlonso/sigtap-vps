@@ -1,90 +1,354 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-    <title>Contato - Giles Grolla Alonso</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contato & Suporte | SIGTAP</title>
+    
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f0f2f5; color: #333; line-height: 1.6; }
-        .header { background-color: #fff; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #3498db; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .header h1 { margin: 0; color: #2c3e50; font-size: 22px; }
-        .custom-button { padding: 10px 20px; font-weight: bold; text-decoration: none; color: #fff; background-color: #3498db; border-radius: 5px; transition: 0.3s; }
-        .custom-button:hover { background-color: #2980b9; }
+        :root {
+            --primary: #2D8C3C;
+            --primary-dark: #237A33;
+            --accent: #F97316;
+            --accent-hover: #EA580C;
+            --bg-color: #F3F4F6;
+            --card-bg: #FFFFFF;
+            --text-main: #1F2937;
+            --text-muted: #6B7280;
+            --border: #E5E7EB;
+        }
 
-        .container { display: flex; justify-content: center; align-items: center; padding: 40px 20px; }
+        * {
+            box-sizing: border-box;
+        }
 
-        .contact-card { background: white; border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 600px; overflow: hidden; }
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
 
-        .card-header { background: #2c3e50; padding: 40px 20px; color: white; text-align: center; }
-        .card-header h2 { margin: 10px 0 5px; font-size: 32px; }
-        .card-header .title { font-size: 18px; color: #3498db; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        /* Navbar */
+        .navbar {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
 
-        .card-body { padding: 30px; }
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
 
-        .section-title { font-size: 14px; font-weight: bold; color: #7f8c8d; text-transform: uppercase; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .navbar-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.025em;
+            color: white;
+            text-decoration: none;
+        }
 
-        .info-box { background: #fdfefe; border: 1px solid #e0e0e0; padding: 15px; margin-bottom: 25px; border-radius: 8px; font-size: 14px; }
-        .info-box i { color: #3498db; margin-right: 8px; }
+        .nav-buttons a {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-decoration: none;
+            color: white;
+            background-color: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 0.375rem;
+            transition: all 0.2s;
+        }
 
-        .project-link { display: flex; align-items: center; background: #ebf5fb; padding: 15px; border-radius: 8px; text-decoration: none; color: #2980b9; font-weight: bold; margin-bottom: 25px; transition: 0.3s; border: 1px solid #d6eaf8; }
-        .project-link:hover { background: #d6eaf8; transform: translateX(5px); }
-        .project-link i { font-size: 24px; margin-right: 15px; }
+        .nav-buttons a:hover {
+            background-color: rgba(255, 255, 255, 0.25);
+        }
 
-        .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .contact-item { display: flex; align-items: center; text-decoration: none; color: #444; padding: 12px; border-radius: 8px; background: #f8f9fa; border: 1px solid #eee; transition: 0.3s; font-size: 14px; }
-        .contact-item:hover { background: #fff; border-color: #3498db; color: #3498db; }
-        .contact-item i { margin-right: 10px; color: #3498db; }
+        /* Main Container */
+        .container {
+            max-width: 680px;
+            width: 100%;
+            margin: 3rem auto;
+            padding: 0 1rem;
+            flex-grow: 1;
+        }
 
-        .footer-note { font-size: 12px; color: #bdc3c7; text-align: center; margin-top: 30px; padding: 0 20px; }
-        .footer-note a { color: #95a5a6; }
+        .card {
+            background: var(--card-bg);
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .card-header-banner {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 2.5rem 2rem;
+            color: white;
+            text-align: center;
+            position: relative;
+        }
+
+        .avatar-badge {
+            width: 72px;
+            height: 72px;
+            background-color: white;
+            color: var(--primary-dark);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 1rem auto;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        .card-header-banner h1 {
+            margin: 0;
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .card-header-banner p {
+            margin: 0.35rem 0 0 0;
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .card-body {
+            padding: 2rem;
+        }
+
+        .section-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-box {
+            background-color: #F8FAFC;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary);
+            padding: 1.1rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            margin-bottom: 1.75rem;
+            line-height: 1.5;
+        }
+
+        .info-box p {
+            margin: 0 0 0.5rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+        }
+
+        .info-box p:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-box i {
+            color: var(--primary);
+            margin-top: 0.2rem;
+        }
+
+        .info-box a {
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: underline;
+        }
+
+        .project-link-card {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: #EFF6FF;
+            border: 1px solid #BFDBFE;
+            padding: 1rem 1.25rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            color: #1E40AF;
+            font-weight: 600;
+            margin-bottom: 1.75rem;
+            transition: all 0.2s;
+        }
+
+        .project-link-card:hover {
+            background: #DBEAFE;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .project-link-icon {
+            font-size: 1.75rem;
+            color: #2563EB;
+        }
+
+        .project-link-desc {
+            font-weight: 400;
+            font-size: 0.8rem;
+            color: #3B82F6;
+            margin-top: 0.15rem;
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 540px) {
+            .contact-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .btn-contact {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            padding: 0.85rem 1.25rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .btn-email {
+            background-color: #F3F4F6;
+            color: var(--text-main);
+            border-color: var(--border);
+        }
+
+        .btn-email:hover {
+            background-color: #E5E7EB;
+            color: #111827;
+        }
+
+        .btn-chat {
+            background-color: var(--accent);
+            color: white;
+            box-shadow: 0 2px 4px rgba(249, 115, 22, 0.2);
+        }
+
+        .btn-chat:hover {
+            background-color: var(--accent-hover);
+            color: white;
+            box-shadow: 0 4px 8px rgba(249, 115, 22, 0.3);
+        }
+
+        .footer-note {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border);
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Portal de Dados SIGTAP (Contingência)</h1>
-        <a href="/" class="custom-button"><i class="fas fa-home"></i> Início</a>
+
+    <div class="navbar">
+        <div class="navbar-brand">
+            <a href="/" class="navbar-title"><i class="fas fa-heartbeat"></i> SIGTAP</a>
+        </div>
+        <div class="nav-buttons">
+            <a href="/"><i class="fas fa-arrow-left"></i> Painel Principal</a>
+        </div>
     </div>
 
     <div class="container">
-        <div class="contact-card">
-            <div class="card-header">
-                <h2>Giles Grolla Alonso</h2>
-                <div class="title">Desenvolvedor Full Stack</div>
+        <div class="card">
+            <div class="card-header-banner">
+                <div class="avatar-badge">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <h1>Giles Grolla Alonso</h1>
+                <p>Desenvolvedor Full Stack</p>
             </div>
 
             <div class="card-body">
-                <div class="section-title">Sobre esta ferramenta</div>
+                <div class="section-title">
+                    <i class="fas fa-info-circle"></i> Sobre esta ferramenta
+                </div>
                 <div class="info-box">
-                    <p><i class="fas fa-check-circle"></i> Desenvolvida para processamento off-line da <strong>Tabela Unificada do SIGTAP</strong> (arquivos como <i>TabelaUnificada_YYYYMM_v...zip</i>).</p>
-                    <p><i class="fas fa-sync-alt"></i> Garante a continuidade dos trabalhos quando o <a href="http://sigtap.datasus.gov.br/" target="_blank" style="color:#3498db">portal oficial do SIGTAP</a> está indisponível.</p>
+                    <p>
+                        <i class="fas fa-check-circle"></i>
+                        <span>Desenvolvida para processamento off-line da <strong>Tabela Unificada do SIGTAP</strong> (arquivos como <i>TabelaUnificada_YYYYMM_v...zip</i>).</span>
+                    </p>
+                    <p>
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Garante a continuidade dos trabalhos de planejamento e programação em saúde quando o <a href="http://sigtap.datasus.gov.br/" target="_blank">portal oficial do SIGTAP</a> estiver indisponível.</span>
+                    </p>
                 </div>
 
-                <div class="section-title">Outros Projetos</div>
-                <a href="https://sites.google.com/view/novappicapixaba/" target="_blank" class="project-link">
-                    <i class="fas fa-map-marked-alt"></i>
+                <div class="section-title">
+                    <i class="fas fa-project-diagram"></i> Outros Projetos
+                </div>
+                <a href="https://sites.google.com/view/novappicapixaba/" target="_blank" class="project-link-card">
+                    <div class="project-link-icon">
+                        <i class="fas fa-map-marked-alt"></i>
+                    </div>
                     <div>
-                        Nova PPI Capixaba
-                        <div style="font-weight: normal; font-size: 12px; color: #5dade2;">Em uso oficial pela Secretaria de Saúde do Espírito Santo</div>
+                        <div>Nova PPI Capixaba</div>
+                        <div class="project-link-desc">Em uso oficial pela Secretaria de Saúde do Espírito Santo</div>
                     </div>
                 </a>
 
-                <div class="section-title">Contato e Suporte</div>
+                <div class="section-title">
+                    <i class="fas fa-headset"></i> Contato e Suporte
+                </div>
                 <div class="contact-grid">
-                    <a href="mailto:giles.g.alonso@gmail.com" class="contact-item">
+                    <a href="mailto:giles.g.alonso@gmail.com" class="btn-contact btn-email">
                         <i class="fas fa-envelope"></i>
                         <span>E-mail</span>
                     </a>
-                    <a href="https://tawk.to/chat/6a0b408a3507531c343e010d/1jotv881n" target="_blank" class="contact-item">
-                        <i class="fas fa-comment-dots"></i>
-                        <span>Chat ao Vivo</span>
+                    <a href="https://tawk.to/chat/6a0b408a3507531c343e010d/1jotv881n" target="_blank" class="btn-contact btn-chat">
+                        <i class="fas fa-comments"></i>
+                        <span>Conversar com o Desenvolvedor</span>
                     </a>
                 </div>
 
                 <div class="footer-note">
-                    Desenvolvido por Giles Grolla Alonso &copy; 2024<br>
-                    Esta é uma ferramenta de uso independente, criada para facilitar o acesso aos dados abertos do DATASUS.
+                    Desenvolvido por <strong>Giles Grolla Alonso &copy; 2026</strong><br>
+                    Ferramenta de uso independente para apoio ao planejamento e gestão em saúde no SUS.
                 </div>
             </div>
         </div>
     </div>
+
 </body>
 </html>
