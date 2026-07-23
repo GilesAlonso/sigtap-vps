@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalhes | {{ proc.CO_PROCEDIMENTO }}</title>
-    <!-- Fonts -->
+    <title>Detalhes | {{ proc.CO_PROCEDIMENTO }} - {{ proc.NO_PROCEDIMENTO }}</title>
+    
+    <!-- Google Fonts & FontAwesome -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         :root {
-            /* SolveThis Theme Colors */
             --primary: #2D8C3C;
             --primary-dark: #237A33;
             --accent: #F97316;
@@ -22,12 +22,16 @@
             --border: #E5E7EB;
         }
 
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             margin: 0;
             background-color: var(--bg-color);
             color: var(--text-main);
-            padding-bottom: 3rem;
+            padding-bottom: 4rem;
         }
         
         /* Navbar */
@@ -37,6 +41,7 @@
             padding: 1rem 2rem;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
@@ -56,7 +61,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1240px;
             margin: 2rem auto;
             padding: 0 1rem;
         }
@@ -69,51 +74,201 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             margin-bottom: 2rem;
             border-top: 6px solid var(--accent);
+            position: relative;
         }
 
-        .proc-code {
-            display: inline-block;
+        .hero-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .proc-code-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
             background-color: #FEF3C7;
             color: #D97706;
-            padding: 0.25rem 0.75rem;
+            padding: 0.35rem 0.85rem;
             border-radius: 9999px;
             font-family: monospace;
             font-size: 1.125rem;
             font-weight: 700;
-            margin-bottom: 1rem;
+            border: 1px solid #FDE68A;
+        }
+
+        .btn-copy {
+            background-color: #F3F4F6;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 0.4rem 0.85rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s;
+        }
+
+        .btn-copy:hover {
+            background-color: #E5E7EB;
+            color: var(--primary-dark);
         }
 
         .proc-name {
-            font-size: 1.875rem;
+            font-size: 1.85rem;
             font-weight: 700;
             color: var(--text-main);
-            margin: 0 0 1rem 0;
-            line-height: 1.2;
+            margin: 0 0 1.25rem 0;
+            line-height: 1.25;
         }
 
         .proc-desc {
-            font-size: 1rem;
-            color: var(--text-muted);
-            line-height: 1.5;
-            margin: 0;
+            font-size: 0.95rem;
+            color: #374151;
+            line-height: 1.6;
+            margin: 0 0 1.5rem 0;
             background-color: #F9FAFB;
-            padding: 1rem;
+            padding: 1.125rem;
             border-radius: 0.5rem;
-            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary);
+            border-top: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
         }
 
-        /* Grids for Relational Data */
-        .section-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--text-main);
-            margin: 0 0 1rem 0;
+        /* Financial Highlight Cards */
+        .financial-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .fin-card {
+            background: #F9FAFB;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1rem 1.25rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 1rem;
         }
 
-        .section-title i {
+        .fin-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .fin-icon.sa {
+            background-color: #DCFCE7;
+            color: #15803D;
+        }
+
+        .fin-icon.hosp {
+            background-color: #DBEAFE;
+            color: #1D4ED8;
+        }
+
+        .fin-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .fin-value {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-top: 0.15rem;
+        }
+
+        /* Attributes Grid */
+        .attrs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.25rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .attr-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .attr-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .attr-value {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        /* Pill Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.65rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .badge-success {
+            background-color: #DCFCE7;
+            color: #166534;
+        }
+
+        .badge-info {
+            background-color: #DBEAFE;
+            color: #1E40AF;
+        }
+
+        .badge-warning {
+            background-color: #FEF3C7;
+            color: #92400E;
+        }
+
+        .badge-danger {
+            background-color: #FEE2E2;
+            color: #991B1B;
+        }
+
+        .badge-neutral {
+            background-color: #F3F4F6;
+            color: #374151;
+        }
+
+        /* Relational Section */
+        .section-header-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 2rem 0 1.25rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+        }
+
+        .section-header-title i {
             color: var(--primary);
         }
 
@@ -134,24 +289,69 @@
 
         .data-card {
             background-color: var(--card-bg);
-            border-radius: 0.5rem;
+            border-radius: 0.65rem;
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            border: 1px solid var(--border);
         }
         
         .data-card-header {
             background-color: #F8FAFC;
             padding: 1rem 1.25rem;
             border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .data-card-title {
             font-weight: 600;
+            font-size: 0.95rem;
             color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .data-card-title i {
+            color: var(--primary);
+        }
+
+        .count-pill {
+            background-color: #E2E8F0;
+            color: #334155;
+            padding: 0.15rem 0.55rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .card-search-box {
+            padding: 0.65rem 1.25rem;
+            background-color: #FAF5FF;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-search-box input {
+            width: 100%;
+            padding: 0.4rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            font-size: 0.85rem;
+            font-family: inherit;
         }
 
         .data-card-body {
             padding: 0;
             overflow-x: auto;
+            max-height: 420px;
+            overflow-y: auto;
             flex-grow: 1;
         }
 
@@ -162,7 +362,7 @@
         }
 
         th {
-            background-color: white;
+            background-color: #F9FAFB;
             color: var(--text-muted);
             font-size: 0.75rem;
             text-transform: uppercase;
@@ -170,6 +370,9 @@
             padding: 0.75rem 1rem;
             text-align: left;
             border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
         td {
@@ -182,6 +385,10 @@
             border-bottom: none;
         }
 
+        tbody tr:hover {
+            background-color: #F8FAFC;
+        }
+
         .no-data {
             padding: 2rem;
             text-align: center;
@@ -189,73 +396,212 @@
             font-style: italic;
         }
 
+        /* Toast notification */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #1F2937;
+            color: #fff;
+            text-align: center;
+            border-radius: 0.5rem;
+            padding: 0.85rem 1.25rem;
+            position: fixed;
+            z-index: 100;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        #toast.show {
+            visibility: visible;
+            animation: fadein 0.3s, fadeout 0.5s 2.5s;
+        }
+
+        @keyframes fadein {
+            from { bottom: 0; opacity: 0; }
+            to { bottom: 30px; opacity: 1; }
+        }
+
+        @keyframes fadeout {
+            from { bottom: 30px; opacity: 1; }
+            to { bottom: 0; opacity: 0; }
+        }
     </style>
 </head>
 <body>
 
     <div class="navbar">
         <a href="{{ url_for('index') }}"><i class="fas fa-arrow-left"></i> Voltar ao Painel Principal</a>
+        <div style="font-size: 0.875rem; font-weight: 500; opacity: 0.9;">SIGTAP - Tabela Unificada</div>
     </div>
 
     <div class="container">
         
+        <!-- Hero Card -->
         <div class="hero-card">
-            <div class="proc-code">{{ proc.CO_PROCEDIMENTO }}</div>
+            <div class="hero-header-row">
+                <div class="proc-code-badge">
+                    <i class="fas fa-hashtag"></i> {{ proc.CO_PROCEDIMENTO }}
+                </div>
+                <button class="btn-copy" onclick="copyToClipboard('{{ proc.CO_PROCEDIMENTO }} - {{ proc.NO_PROCEDIMENTO }}')">
+                    <i class="far fa-copy"></i> Copiar Código e Nome
+                </button>
+            </div>
+
             <h1 class="proc-name">{{ proc.NO_PROCEDIMENTO }}</h1>
+
             {% if descricao %}
             <div class="proc-desc">
-                <strong>Descrição:</strong> {{ descricao }}
+                <strong><i class="fas fa-info-circle"></i> Descrição Oficial:</strong><br>
+                {{ descricao }}
             </div>
             {% endif %}
 
-                <div><strong>Complexidade:</strong> {{ proc.TP_COMPLEXIDADE }}</div>
-                <div><strong>Financiamento:</strong> {{ proc.CO_FINANCIAMENTO }}{% if proc.NO_FINANCIAMENTO %} - {{ proc.NO_FINANCIAMENTO }}{% endif %}</div>
+            <!-- Financial Highlight Row -->
+            <div class="financial-row">
+                <div class="fin-card">
+                    <div class="fin-icon sa"><i class="fas fa-hand-holding-medical"></i></div>
+                    <div>
+                        <div class="fin-label">Valor Ambulatorial (SA)</div>
+                        <div class="fin-value">R$ {{ "%.2f"|format(proc.VL_SA) }}</div>
+                    </div>
+                </div>
+
+                <div class="fin-card">
+                    <div class="fin-icon hosp"><i class="fas fa-hospital-symbol"></i></div>
+                    <div>
+                        <div class="fin-label">Valor Hospitalar (Hosp.)</div>
+                        <div class="fin-value">R$ {{ "%.2f"|format(proc.VL_H) }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Specifications Grid -->
+            <div class="attrs-grid">
+                <div class="attr-item">
+                    <span class="attr-label">Complexidade</span>
+                    <span class="attr-value">
+                        {% if proc.TP_COMPLEXIDADE == '0' %}<span class="badge badge-neutral">0 - Não Aplica</span>
+                        {% elif proc.TP_COMPLEXIDADE == '1' %}<span class="badge badge-success">1 - Atenção Básica</span>
+                        {% elif proc.TP_COMPLEXIDADE == '2' %}<span class="badge badge-info">2 - Média Complexidade</span>
+                        {% elif proc.TP_COMPLEXIDADE == '3' %}<span class="badge badge-warning">3 - Alta Complexidade</span>
+                        {% else %}{{ proc.TP_COMPLEXIDADE }}{% endif %}
+                    </span>
+                </div>
+
+                <div class="attr-item">
+                    <span class="attr-label">Tipo de Financiamento</span>
+                    <span class="attr-value">
+                        {{ proc.CO_FINANCIAMENTO }}{% if proc.NO_FINANCIAMENTO %} - <strong>{{ proc.NO_FINANCIAMENTO }}</strong>{% endif %}
+                    </span>
+                </div>
+
                 {% if proc.CO_RUBRICA %}
-                <div><strong>Rúbrica:</strong> {{ proc.CO_RUBRICA }}{% if proc.NO_RUBRICA %} - {{ proc.NO_RUBRICA }}{% endif %}</div>
+                <div class="attr-item">
+                    <span class="attr-label">Rúbrica Orçamentária</span>
+                    <span class="attr-value">
+                        {{ proc.CO_RUBRICA }}{% if proc.NO_RUBRICA %} - <strong>{{ proc.NO_RUBRICA }}</strong>{% endif %}
+                    </span>
+                </div>
                 {% endif %}
-                <div><strong>Valor SA:</strong> R$ {{ "%.2f"|format(proc.VL_SA) }}</div>
-                <div><strong>Valor Hosp.:</strong> R$ {{ "%.2f"|format(proc.VL_H) }}</div>
-                <div><strong>Sexo:</strong> {{ proc.TP_SEXO }}</div>
-                <div><strong>Idade Mínima:</strong> {% if proc.VL_IDADE_MINIMA == 9999 %}Sem limite{% else %}{{ proc.VL_IDADE_MINIMA | int }} meses{% endif %}</div>
-                <div><strong>Idade Máxima:</strong> {% if proc.VL_IDADE_MAXIMA == 9999 %}Ilimitada{% else %}{{ proc.VL_IDADE_MAXIMA | int }} meses{% endif %}</div>
-                <div><strong>Qtd. Pontos:</strong> {{ proc.QT_PONTOS | int }}</div>
-                <div><strong>Máx. Execução:</strong> {% if proc.QT_MAXIMA_EXECUCAO == 9999 %}Ilimitado{% else %}{{ proc.QT_MAXIMA_EXECUCAO | int }}{% endif %}</div>
-                <div><strong>Dias Perm.:</strong> {% if proc.QT_DIAS_PERMANENCIA == 9999 %}Ilimitado{% else %}{{ proc.QT_DIAS_PERMANENCIA | int }}{% endif %}</div>
-                {% if proc.QT_TEMPO_PERMANENCIA and proc.QT_TEMPO_PERMANENCIA != 9999 %}
-                <div><strong>Tempo Perm.:</strong> {{ proc.QT_TEMPO_PERMANENCIA | int }}</div>
-                {% endif %}
+
+                <div class="attr-item">
+                    <span class="attr-label">Sexo Permitido</span>
+                    <span class="attr-value">
+                        {% if proc.TP_SEXO == 'M' %}<i class="fas fa-mars" style="color: #2563EB;"></i> Masculino
+                        {% elif proc.TP_SEXO == 'F' %}<i class="fas fa-venus" style="color: #EC4899;"></i> Feminino
+                        {% elif proc.TP_SEXO == 'I' %}<i class="fas fa-venus-mars" style="color: #10B981;"></i> Ambos (Indiferente)
+                        {% else %}<span class="badge badge-neutral">Não se aplica</span>{% endif %}
+                    </span>
+                </div>
+
+                <div class="attr-item">
+                    <span class="attr-label">Faixa Etária</span>
+                    <span class="attr-value">
+                        {% if proc.VL_IDADE_MINIMA == 9999 %}0{% else %}{{ proc.VL_IDADE_MINIMA | int }}{% endif %} a 
+                        {% if proc.VL_IDADE_MAXIMA == 9999 %}Sem limite{% else %}{{ proc.VL_IDADE_MAXIMA | int }}{% endif %} meses
+                    </span>
+                </div>
+
+                <div class="attr-item">
+                    <span class="attr-label">Qtd. Pontos</span>
+                    <span class="attr-value">{{ proc.QT_PONTOS | int }}</span>
+                </div>
+
+                <div class="attr-item">
+                    <span class="attr-label">Máx. Execução</span>
+                    <span class="attr-value">{% if proc.QT_MAXIMA_EXECUCAO == 9999 %}Ilimitado{% else %}{{ proc.QT_MAXIMA_EXECUCAO | int }}{% endif %}</span>
+                </div>
+
+                <div class="attr-item">
+                    <span class="attr-label">Dias Permanência</span>
+                    <span class="attr-value">{% if proc.QT_DIAS_PERMANENCIA == 9999 %}Ilimitado{% else %}{{ proc.QT_DIAS_PERMANENCIA | int }}{% endif %}</span>
+                </div>
             </div>
         </div>
 
-        <div class="section-title"><i class="fas fa-link"></i> Relações Cadastradas</div>
+        <!-- Relational Data Section Header -->
+        <div class="section-header-title">
+            <i class="fas fa-project-diagram"></i> Regras e Relações Cadastradas (Tabelas do SIGTAP)
+        </div>
         
-        {% if related_data %}
+        {% if related_sections %}
         <div class="data-grid">
-            {% for title, data in related_data.items() %}
-                <div class="data-card {% if data.header|length > 3 or (loop.index % 2 != 0 and loop.last) %}full-width{% endif %}">
-                    <div class="data-card-header">{{ title }}</div>
+            {% for section in related_sections %}
+                <div class="data-card {% if section.rows|length > 6 or section.header|length > 3 %}full-width{% endif %}">
+                    <div class="data-card-header">
+                        <div class="data-card-title">
+                            <i class="{{ section.icon }}"></i> {{ section.title }}
+                        </div>
+                        <span class="count-pill">{{ section.count }} {% if section.count == 1 %}registro{% else %}registros{% endif %}</span>
+                    </div>
+
+                    {% if section.count > 4 %}
+                    <div class="card-search-box">
+                        <i class="fas fa-search" style="color: var(--text-muted); font-size: 0.8rem;"></i>
+                        <input type="text" placeholder="Filtrar registros nesta tabela..." onkeyup="filterCardTable(this)">
+                    </div>
+                    {% endif %}
+
                     <div class="data-card-body">
-                        {% if data.rows %}
-                            <table>
+                        {% if section.rows %}
+                            <table class="filterable-table">
                                 <thead>
                                     <tr>
-                                        {% for header in data.header %}
-                                            <th>{{ header }}</th>
+                                        {% for h in section.header %}
+                                            <th>{{ h }}</th>
                                         {% endfor %}
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for row in data.rows %}
+                                    {% for row in section.rows %}
                                         <tr>
                                             {% for cell in row %}
-                                                <td>{{ cell }}</td>
+                                                <td>
+                                                    {% if cell == 'Diagnóstico Principal' %}
+                                                        <span class="badge badge-success"><i class="fas fa-star"></i> Diagnóstico Principal</span>
+                                                    {% elif cell == 'Diagnóstico Secundário' %}
+                                                        <span class="badge badge-info">Diagnóstico Secundário</span>
+                                                    {% elif cell == 'Compatível' %}
+                                                        <span class="badge badge-success"><i class="fas fa-check"></i> Compatível</span>
+                                                    {% elif cell == 'Excludente' %}
+                                                        <span class="badge badge-danger"><i class="fas fa-times"></i> Excludente</span>
+                                                    {% else %}
+                                                        {{ cell }}
+                                                    {% endif %}
+                                                </td>
                                             {% endfor %}
                                         </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
                         {% else %}
-                            <div class="no-data">Sem registros vinculados.</div>
+                            <div class="no-data">Nenhum registro vinculado.</div>
                         {% endif %}
                     </div>
                 </div>
@@ -263,10 +609,45 @@
         </div>
         {% else %}
             <div class="hero-card" style="border-top-color: #9CA3AF; text-align: center; color: var(--text-muted);">
-                Nenhum dado relacional encontrado para este procedimento.
+                Nenhum dado relacional cadastrado para este procedimento na base oficial.
             </div>
         {% endif %}
 
     </div>
+
+    <!-- Toast Notification -->
+    <div id="toast"><i class="fas fa-check-circle" style="color: #10B981;"></i> <span id="toast-msg">Copiado para a área de transferência!</span></div>
+
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast("Copiado: " + text);
+            }).catch(err => {
+                console.error("Erro ao copiar", err);
+            });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById("toast");
+            document.getElementById("toast-msg").innerText = msg;
+            toast.className = "show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+
+        function filterCardTable(inputEl) {
+            const filter = inputEl.value.toLowerCase();
+            const card = inputEl.closest('.data-card');
+            const rows = card.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                if (text.includes(filter)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+    </script>
 </body>
 </html>

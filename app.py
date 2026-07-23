@@ -325,9 +325,9 @@ def procedimento_detail(codigo):
     except:
         pass
 
-    related_data = {}
-    
-    # Custom treatment for CID to show ST_PRINCIPAL
+    related_sections = []
+
+    # 1. CIDs Autorizados
     try:
         cid_rows = conn.execute("""
             SELECT c.CO_CID AS "Código CID", c.NO_CID AS "Descrição do CID", 
@@ -338,77 +338,221 @@ def procedimento_detail(codigo):
             ORDER BY r.ST_PRINCIPAL DESC, c.CO_CID
         """, (codigo,)).fetchall()
         if cid_rows:
-            related_data['Cid Permitidos'] = {
+            related_sections.append({
+                'key': 'cid',
+                'title': 'CIDs Autorizados (CID-10)',
+                'icon': 'fas fa-notes-medical',
                 'header': list(dict(cid_rows[0]).keys()),
-                'rows': [list(dict(row).values()) for row in cid_rows]
-            }
+                'rows': [list(dict(r).values()) for r in cid_rows],
+                'count': len(cid_rows)
+            })
     except Exception as e:
         logging.error(f"Erro processando CIDs: {e}")
 
-    # Custom treatment for Procedimentos Compatíveis
+    # 2. Procedimentos Compatíveis / Excludentes
     try:
         comp_rows = conn.execute("""
             SELECT r.CO_PROCEDIMENTO_COMPATIVEL AS "Código Compatível", 
-                   p.NO_PROCEDIMENTO AS "Nome Procedimento", 
+                   p.NO_PROCEDIMENTO AS "Nome do Procedimento", 
                    CASE WHEN r.TP_COMPATIBILIDADE = '1' THEN 'Compatível' ELSE 'Excludente' END AS "Tipo Compatibilidade",
                    r.QT_PERMITIDA AS "Qtd. Permitida"
             FROM rl_procedimento_compativel r
             JOIN tb_procedimento p ON r.CO_PROCEDIMENTO_COMPATIVEL = p.CO_PROCEDIMENTO
             WHERE r.CO_PROCEDIMENTO_PRINCIPAL = ?
+            ORDER BY r.TP_COMPATIBILIDADE, r.CO_PROCEDIMENTO_COMPATIVEL
         """, (codigo,)).fetchall()
         if comp_rows:
-            related_data['Procedimentos Compativeis'] = {
+            related_sections.append({
+                'key': 'compativel',
+                'title': 'Procedimentos Compatíveis & Excludentes',
+                'icon': 'fas fa-object-group',
                 'header': list(dict(comp_rows[0]).keys()),
-                'rows': [list(dict(row).values()) for row in comp_rows]
-            }
+                'rows': [list(dict(r).values()) for r in comp_rows],
+                'count': len(comp_rows)
+            })
     except Exception as e:
         logging.error(f"Erro processando procedimentos compatíveis: {e}")
 
-    # Busca dinamicamente todas as outras tabelas relacionais do SQLite
+    # 3. Ocupações / CBOs
+    try:
+        ocu_rows = conn.execute("""
+            SELECT o.CO_OCUPACAO AS "Código CBO", o.NO_OCUPACAO AS "Nome da Ocupação / Especialidade"
+            FROM tb_ocupacao o
+            JOIN rl_procedimento_ocupacao r ON o.CO_OCUPACAO = r.CO_OCUPACAO
+            WHERE r.CO_PROCEDIMENTO = ?
+            ORDER BY o.CO_OCUPACAO
+        """, (codigo,)).fetchall()
+        if ocu_rows:
+            related_sections.append({
+                'key': 'ocupacao',
+                'title': 'Ocupações e CBOs Autorizados',
+                'icon': 'fas fa-user-doctor',
+                'header': list(dict(ocu_rows[0]).keys()),
+                'rows': [list(dict(r).values()) for r in ocu_rows],
+                'count': len(ocu_rows)
+            })
+    except Exception as e:
+        logging.error(f"Erro processando Ocupações: {e}")
+
+    # 4. Instrumentos de Registro
+    try:
+        reg_rows = conn.execute("""
+            SELECT reg.CO_REGISTRO AS "Código", reg.NO_REGISTRO AS "Instrumento de Registro"
+            FROM tb_registro reg
+            JOIN rl_procedimento_registro r ON reg.CO_REGISTRO = r.CO_REGISTRO
+            WHERE r.CO_PROCEDIMENTO = ?
+            ORDER BY reg.CO_REGISTRO
+        """, (codigo,)).fetchall()
+        if reg_rows:
+            related_sections.append({
+                'key': 'registro',
+                'title': 'Instrumentos de Registro (Cobrança)',
+                'icon': 'fas fa-file-invoice-dollar',
+                'header': list(dict(reg_rows[0]).keys()),
+                'rows': [list(dict(r).values()) for r in reg_rows],
+                'count': len(reg_rows)
+            })
+    except Exception as e:
+        logging.error(f"Erro processando Registros: {e}")
+
+    # 5. Habilitações
+    try:
+        hab_rows = conn.execute("""
+            SELECT h.CO_HABILITACAO AS "Código Habilitação", h.NO_HABILITACAO AS "Nome da Habilitação"
+            FROM tb_habilitacao h
+            JOIN rl_procedimento_habilitacao r ON h.CO_HABILITACAO = r.CO_HABILITACAO
+            WHERE r.CO_PROCEDIMENTO = ?
+            ORDER BY h.CO_HABILITACAO
+        """, (codigo,)).fetchall()
+        if hab_rows:
+            related_sections.append({
+                'key': 'habilitacao',
+                'title': 'Habilitações Exigidas',
+                'icon': 'fas fa-certificate',
+                'header': list(dict(hab_rows[0]).keys()),
+                'rows': [list(dict(r).values()) for r in hab_rows],
+                'count': len(hab_rows)
+            })
+    except Exception as e:
+        logging.error(f"Erro processando Habilitações: {e}")
+
+    # 6. Detalhes / Regras
+    try:
+        det_rows = conn.execute("""
+            SELECT d.CO_DETALHE AS "Código", d.NO_DETALHE AS "Descrição do Detalhe / Regra"
+            FROM tb_detalhe d
+            JOIN rl_procedimento_detalhe r ON d.CO_DETALHE = r.CO_DETALHE
+            WHERE r.CO_PROCEDIMENTO = ?
+            ORDER BY d.CO_DETALHE
+        """, (codigo,)).fetchall()
+        if det_rows:
+            related_sections.append({
+                'key': 'detalhe',
+                'title': 'Detalhes e Regras Operacionais',
+                'icon': 'fas fa-info-circle',
+                'header': list(dict(det_rows[0]).keys()),
+                'rows': [list(dict(r).values()) for r in det_rows],
+                'count': len(det_rows)
+            })
+    except Exception as e:
+        logging.error(f"Erro processando Detalhes: {e}")
+
+    # 7. Modalidades de Atendimento
+    try:
+        mod_rows = conn.execute("""
+            SELECT m.CO_MODALIDADE AS "Código", m.NO_MODALIDADE AS "Modalidade de Atendimento"
+            FROM tb_modalidade m
+            JOIN rl_procedimento_modalidade r ON m.CO_MODALIDADE = r.CO_MODALIDADE
+            WHERE r.CO_PROCEDIMENTO = ?
+            ORDER BY m.CO_MODALIDADE
+        """, (codigo,)).fetchall()
+        if mod_rows:
+            related_sections.append({
+                'key': 'modalidade',
+                'title': 'Modalidades de Atendimento',
+                'icon': 'fas fa-hospital-user',
+                'header': list(dict(mod_rows[0]).keys()),
+                'rows': [list(dict(r).values()) for r in mod_rows],
+                'count': len(mod_rows)
+            })
+    except Exception as e:
+        logging.error(f"Erro processando Modalidades: {e}")
+
+    # 8. Serviços / Classificações CNES
+    try:
+        srv_rows = conn.execute("""
+            SELECT s.CO_SERVICO AS "Cod. Serviço", s.NO_SERVICO AS "Nome Serviço",
+                   sc.CO_CLASSIFICACAO AS "Cod. Classificação", sc.NO_CLASSIFICACAO AS "Nome Classificação"
+            FROM rl_procedimento_servico r
+            JOIN tb_servico s ON r.CO_SERVICO = s.CO_SERVICO
+            JOIN tb_servico_classificacao sc ON r.CO_SERVICO = sc.CO_SERVICO AND r.CO_CLASSIFICACAO = sc.CO_CLASSIFICACAO
+            WHERE r.CO_PROCEDIMENTO = ?
+        """, (codigo,)).fetchall()
+        if srv_rows:
+            related_sections.append({
+                'key': 'servico',
+                'title': 'Serviços e Classificações CNES',
+                'icon': 'fas fa-hospital',
+                'header': list(dict(srv_rows[0]).keys()),
+                'rows': [list(dict(r).values()) for r in srv_rows],
+                'count': len(srv_rows)
+            })
+    except Exception as e:
+        logging.error(f"Erro processando Serviços CNES: {e}")
+
+    # 9. Tipos de Leito
+    try:
+        lei_rows = conn.execute("""
+            SELECT l.CO_TIPO_LEITO AS "Código", l.NO_TIPO_LEITO AS "Descrição do Tipo de Leito"
+            FROM tb_tipo_leito l
+            JOIN rl_procedimento_leito r ON l.CO_TIPO_LEITO = r.CO_TIPO_LEITO
+            WHERE r.CO_PROCEDIMENTO = ?
+        """, (codigo,)).fetchall()
+        if lei_rows:
+            related_sections.append({
+                'key': 'leito',
+                'title': 'Tipos de Leito Permitidos',
+                'icon': 'fas fa-bed',
+                'header': list(dict(lei_rows[0]).keys()),
+                'rows': [list(dict(r).values()) for r in lei_rows],
+                'count': len(lei_rows)
+            })
+    except Exception as e:
+        logging.error(f"Erro processando Leitos: {e}")
+
+    # Dynamic fallback for all remaining rl_procedimento_* tables
+    handled_keys = {'cid', 'compativel', 'ocupacao', 'registro', 'habilitacao', 'detalhe', 'modalidade', 'servico', 'leito'}
     try:
         tables = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'rl_procedimento_%'").fetchall()
-        
         for table_row in tables:
             rl_table = table_row['name']
-            if rl_table in ('rl_procedimento_cid', 'rl_procedimento_compativel'):
-                continue
-                
             target_suffix = rl_table.replace('rl_procedimento_', '')
+            if target_suffix in handled_keys:
+                continue
+
             target_tb = f"tb_{target_suffix}"
-            
             columns_info = conn.execute(f"PRAGMA table_info({rl_table})").fetchall()
             key_column = next((col['name'] for col in columns_info if col['name'] != 'CO_PROCEDIMENTO' and col['name'].startswith('CO_')), None)
-            
             if not key_column: continue
-            
+
             tb_exists = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = ?", (target_tb,)).fetchone()
             if not tb_exists: continue
-            
-            join_query = f"""
-                SELECT t.* FROM {target_tb} t
-                JOIN {rl_table} r ON t.{key_column} = r.{key_column}
-                WHERE r.CO_PROCEDIMENTO = ?
-            """
-            
-            joined_rows = conn.execute(join_query, (codigo,)).fetchall()
+
+            joined_rows = conn.execute(f"SELECT t.* FROM {target_tb} t JOIN {rl_table} r ON t.{key_column} = r.{key_column} WHERE r.CO_PROCEDIMENTO = ?", (codigo,)).fetchall()
             if joined_rows:
                 table_title = target_suffix.replace('_', ' ').title()
-                header = list(dict(joined_rows[0]).keys())
-                rows = [list(dict(r).values()) for r in joined_rows]
-                
-                related_data[table_title] = {
-                    'header': header,
-                    'rows': rows
-                }
+                related_sections.append({
+                    'key': target_suffix,
+                    'title': table_title,
+                    'icon': 'fas fa-link',
+                    'header': list(dict(joined_rows[0]).keys()),
+                    'rows': [list(dict(r).values()) for r in joined_rows],
+                    'count': len(joined_rows)
+                })
     except Exception as e:
-        logging.error(f"Erro processando dados relacionais: {e}")
+        logging.error(f"Erro processando outras tabelas relacionais: {e}")
 
-    sorted_keys = sorted([k for k in related_data.keys() if k != 'Ocupacao'])
-    if 'Ocupacao' in related_data:
-        sorted_keys.append('Ocupacao')
-    ordered_related_data = {k: related_data[k] for k in sorted_keys}
-
-    return render_template('procedimento_detail.html', proc=proc_principal, related_data=ordered_related_data, descricao=descricao)
+    return render_template('procedimento_detail.html', proc=proc_principal, related_sections=related_sections, descricao=descricao)
 
 @app.route('/contato')
 def contato():
