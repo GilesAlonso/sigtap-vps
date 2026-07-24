@@ -7,16 +7,9 @@ User=ubuntu
 Group=www-data
 WorkingDirectory=/home/ubuntu/Sigtap
 Environment="PATH=/home/ubuntu/.local/bin:/usr/bin"
-
-# Failsafe de memória para evitar OOM Killer
 MemoryHigh=2G
 MemoryMax=3G
-
-# Comando atualizado com o novo caminho do UV, Bind 0.0.0.0, log de acesso para o GoAccess e reciclagem de workers
-ExecStart=/home/ubuntu/.local/bin/uv run gunicorn -w 4 -b 0.0.0.0:5000 --access-logfile /home/ubuntu/Sigtap/access.log --access-logformat '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"' --max-requests 1000 --max-requests-jitter 50 app:app
-
-# Restart automático se der crash
-Restart=always
+ExecStart=/home/ubuntu/.local/bin/uv run gunicorn -w 4 -b 0.0.0.0:5000 --max-requests 1000 --max-requests-jitter 50 --forwarded-allow-ips="*" --access-logfile /home/ubuntu/Sigtap/access.log --access-logformat '%%{CF-Connecting-IP}i %%(l)s %%(u)s %%(t)s "%%(r)s" %%(s)s %%(b)s "%%(f)s" "%%(a)s"' app:app
 
 [Install]
 WantedBy=multi-user.target
