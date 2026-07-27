@@ -1,4 +1,3 @@
-import ftplib
 import os
 import sys
 import shutil
@@ -8,30 +7,21 @@ import sqlite3
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from app import process_sigtap_zip, OUTPUT_DIR, DB_PATH
+from ftp_utils import list_sigtap_zips, download_sigtap_file
 
-FTP_HOST = 'ftp2.datasus.gov.br'
-FTP_DIR = '/pub/sistemas/tup/downloads/'
-LOCAL_FILENAME = 'TabelaUnificada_latest.zip'
+LOCAL_FILENAME = os.path.join(OUTPUT_DIR, 'TabelaUnificada_latest.zip')
 VERSION_FILE = os.path.join(OUTPUT_DIR, 'version.txt')
 
 def check_and_update_sigtap():
-    print(f"[{FTP_HOST}] Conectando ao FTP DATASUS...")
+    print("Conectando ao FTP DATASUS com suporte a retentativas...")
     try:
-        ftp = ftplib.FTP(FTP_HOST)
-        ftp.login(user='anonymous', passwd='anonymous@datasus.gov.br')
-        ftp.cwd(FTP_DIR)
-        
-        files = ftp.nlst()
-        zip_files = [f for f in files if f.startswith('TabelaUnificada_') and f.endswith('.zip')]
+        zip_files = list_sigtap_zips(timeout=120, max_retries=10)
         
         if not zip_files:
             print("Nenhum arquivo zip da Tabela Unificada encontrado no diretório.")
-            ftp.quit()
             return
 
-        zip_files.sort()
         latest_file = zip_files[-1]
-        
         print(f"Último arquivo no FTP: {latest_file}")
         
         # Check current version
@@ -42,16 +32,11 @@ def check_and_update_sigtap():
                 
         if current_version == latest_file:
             print(f"O banco de dados já está atualizado com a versão: {current_version}")
-            ftp.quit()
             return
             
         print(f"Nova versão detectada! Baixando {latest_file}...")
+        download_sigtap_file(latest_file, LOCAL_FILENAME, timeout=120, max_retries=10)
         
-        # Download
-        with open(LOCAL_FILENAME, 'wb') as f:
-            ftp.retrbinary(f'RETR {latest_file}', f.write)
-            
-        ftp.quit()
         print("Download concluído. Iniciando o processamento em banco staging (zero downtime)...")
         
         staging_db = os.path.join(OUTPUT_DIR, 'sigtap_staging.db')
@@ -109,10 +94,8 @@ def check_and_update_sigtap():
         if os.path.exists(LOCAL_FILENAME):
             os.remove(LOCAL_FILENAME)
             
-    except ftplib.all_errors as e:
-        print(f"Erro de FTP: {e}")
     except Exception as e:
-        print(f"Ocorreu um erro inesperado durante a atualização: {e}")
+        print(f"Ocorreu um erro durante a atualização: {e}")
 
 if __name__ == "__main__":
     check_and_update_sigtap()

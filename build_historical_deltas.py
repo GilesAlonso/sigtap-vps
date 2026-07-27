@@ -1,34 +1,42 @@
-import ftplib
 import os
 import sys
-import sqlite3
 import argparse
 import logging
+import sqlite3
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from app import process_sigtap_zip, DB_PATH, OUTPUT_DIR
-from history import compute_diffs_between_dbs, insert_diffs, init_history_table
+from history import compute_diffs_between_dbs, insert_diffs, init_history_table, get_db_connection, copy_existing_history
+from ftp_utils import list_sigtap_zips, download_sigtap_file
 
-FTP_HOST = 'ftp2.datasus.gov.br'
-FTP_DIR = '/pub/sistemas/tup/downloads/'
 TEMP_DIR = os.path.join(OUTPUT_DIR, 'temp_history_build')
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 
+def extract_comp(filename):
+    parts = filename.split('_')
+    if len(parts) >= 2 and len(parts[1]) >= 6:
+        return parts[1][:6]
+    return filename
+
+def is_comp_in_history(conn, comp):
+    if not comp: return False
+    try:
+        cur = conn.cursor()
+        cnt = cur.execute("SELECT COUNT(*) FROM tb_historico_alteracoes WHERE competencia_para = ?", (str(comp),)).fetchone()[0]
+        return cnt > 0
+    except Exception:
+        return False
+
 def process_historical_files(limit=12, start_year=None):
     os.makedirs(TEMP_DIR, exist_ok=True)
     
-    logging.info(f"Conectando ao FTP DATASUS ({FTP_HOST})...")
-    ftp = ftplib.FTP(FTP_HOST)
-    ftp.login(user='anonymous', passwd='anonymous@datasus.gov.br')
-    ftp.cwd(FTP_DIR)
-    
-    files = [f for f in ftp.nlst() if f.startswith('TabelaUnificada_') and f.endswith('.zip')]
-    files.sort()
+    logging.info("Buscando lista de arquivos ZIP no FTP DATASUS com tratamento de retentativas...")
+    files = list_sigtap_zips(timeout=120, max_retries=10)
     
     if start_year:
-        files = [f for f in files if f.split('_')[1][:4] >= str(start_year)]
+        files = [f for f in files if extract_comp(f)[:4] >= str(start_year)]
         
     if limit and limit > 0 and len(files) > limit:
         logging.info(f"Selecionando as últimas {limit} competências de um total de {len(files)}...")
@@ -36,41 +44,56 @@ def process_historical_files(limit=12, start_year=None):
     else:
         logging.info(f"Processando todas as {len(files)} competências encontradas...")
 
+    # Garantir a existência do banco final e tabela de histórico
+    final_conn = get_db_connection(DB_PATH) if os.path.exists(DB_PATH) else None
+    if final_conn:
+        init_history_table(final_conn)
+        final_conn.close()
+
     prev_db_path = None
     total_diffs_recorded = 0
 
-    from history import compute_diffs_between_dbs, insert_diffs, init_history_table, get_db_connection, copy_existing_history
-
-    # Garantir a existência do banco final e tabela de histórico
-    if not os.path.exists(DB_PATH):
-        logging.warning("DB_PATH principal não encontrado. Será criado ao final do processo.")
-
-    final_conn = get_db_connection(DB_PATH)
-    init_history_table(final_conn)
-    final_conn.close()
-
     for idx, zip_filename in enumerate(files):
-        logging.info(f"[{idx+1}/{len(files)}] Baixando {zip_filename}...")
+        comp_curr = extract_comp(zip_filename)
+        comp_next = extract_comp(files[idx+1]) if (idx + 1 < len(files)) else None
+
+        # Verificação de Retomada Inteligente (Resume Mode)
+        if os.path.exists(DB_PATH):
+            conn_check = get_db_connection(DB_PATH)
+            curr_recorded = is_comp_in_history(conn_check, comp_curr)
+            next_recorded = is_comp_in_history(conn_check, comp_next) if comp_next else True
+            conn_check.close()
+
+            if curr_recorded and next_recorded:
+                logging.info(f"[{idx+1}/{len(files)}] Competência {comp_curr} já registrada no histórico. Ignorando download (Resume Mode).")
+                continue
+
+        logging.info(f"[{idx+1}/{len(files)}] Processando competência {comp_curr} ({zip_filename})...")
         local_zip = os.path.join(TEMP_DIR, zip_filename)
         
-        with open(local_zip, 'wb') as f:
-            ftp.retrbinary(f'RETR {zip_filename}', f.write)
+        try:
+            download_sigtap_file(zip_filename, local_zip, timeout=120, max_retries=10)
+        except Exception as e:
+            logging.error(f"Falha crítica ao baixar {zip_filename} após retentativas: {e}")
+            continue
 
-        curr_db_path = os.path.join(TEMP_DIR, f"comp_{idx}.db")
+        curr_db_path = os.path.join(TEMP_DIR, f"comp_{comp_curr}.db")
+        if os.path.exists(curr_db_path):
+            os.remove(curr_db_path)
         
         try:
-            # Processa o zip diretamente para o curr_db_path temporário
+            # Processa o zip diretamente para curr_db_path temporário
             process_sigtap_zip(local_zip, target_db_path=curr_db_path)
         except Exception as e:
-            logging.error(f"Erro ao processar {zip_filename}: {e}")
+            logging.error(f"Erro ao processar conteúdo do ZIP {zip_filename}: {e}")
             if os.path.exists(local_zip): os.remove(local_zip)
             continue
 
-        # Remove o zip local para economizar espaço em disco
+        # Remove o zip local após extração para economizar disco
         if os.path.exists(local_zip):
             os.remove(local_zip)
 
-        # Se houver um banco anterior, calcula o diff
+        # Se houver um banco anterior na sequência, calcula o delta
         if prev_db_path and os.path.exists(prev_db_path):
             conn_prev = get_db_connection(prev_db_path)
             conn_curr = get_db_connection(curr_db_path)
@@ -85,15 +108,15 @@ def process_historical_files(limit=12, start_year=None):
                 insert_diffs(target_conn, diffs)
                 target_conn.close()
                 total_diffs_recorded += len(diffs)
-                logging.info(f"Inseridos {len(diffs)} registros de histórico no banco.")
+                logging.info(f"✓ {len(diffs)} registros de histórico gravados no banco de dados.")
 
-            # Apaga prev_db_path
+            # Apaga o banco anterior da memória/disco
             if os.path.exists(prev_db_path):
                 os.remove(prev_db_path)
 
         prev_db_path = curr_db_path
 
-    # No final, o último curr_db_path torna-se o DB_PATH oficial (versão mais recente)
+    # No final, o último curr_db_path torna-se o DB_PATH oficial (versão mais recente do SIGTAP)
     if prev_db_path and os.path.exists(prev_db_path):
         if os.path.exists(DB_PATH):
             conn_final = get_db_connection(DB_PATH)
@@ -105,21 +128,25 @@ def process_historical_files(limit=12, start_year=None):
         
         os.rename(prev_db_path, DB_PATH)
 
-    ftp.quit()
-    
-    # Limpa diretório temp
+    # Limpa diretório temporário se restou algo
     if os.path.exists(TEMP_DIR):
         for f in os.listdir(TEMP_DIR):
-            os.remove(os.path.join(TEMP_DIR, f))
-        os.rmdir(TEMP_DIR)
+            try:
+                os.remove(os.path.join(TEMP_DIR, f))
+            except Exception:
+                pass
+        try:
+            os.rmdir(TEMP_DIR)
+        except Exception:
+            pass
 
-    logging.info(f"=== Processo Concluído com Sucesso ===")
-    logging.info(f"Total de deltas históricos gravados: {total_diffs_recorded}")
+    logging.info("=== Processo de Carga Histórica Concluído com Sucesso ===")
+    logging.info(f"Total de deltas históricos gravados nesta sessão: {total_diffs_recorded}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Script de carga do histórico retroativo do SIGTAP via FTP DATASUS.")
+    parser = argparse.ArgumentParser(description="Script resiliente de carga do histórico retroativo do SIGTAP via FTP DATASUS.")
     parser.add_argument("--limit", type=int, default=12, help="Número de competências mais recentes para processar (0 para todas). Padrão: 12")
-    parser.add_argument("--start-year", type=int, default=None, help="Ano inicial para filtrar (ex: 2024)")
+    parser.add_argument("--start-year", type=int, default=None, help="Ano inicial para filtrar (ex: 2008 ou 2024)")
     args = parser.parse_args()
 
     process_historical_files(limit=args.limit, start_year=args.start_year)
