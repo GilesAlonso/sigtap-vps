@@ -145,8 +145,12 @@ def process_historical_files(limit=12, start_year=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Script resiliente de carga do histórico retroativo do SIGTAP via FTP DATASUS.")
-    parser.add_argument("--limit", type=int, default=12, help="Número de competências mais recentes para processar (0 para todas). Padrão: 12")
+    parser.add_argument("--limit", type=int, default=None, help="Número de competências mais recentes para processar (0 para todas). Padrão: 12 (ou 0 se --start-year for informado)")
     parser.add_argument("--start-year", type=int, default=None, help="Ano inicial para filtrar (ex: 2008 ou 2024)")
     args = parser.parse_args()
 
-    process_historical_files(limit=args.limit, start_year=args.start_year)
+    limit = args.limit
+    if limit is None:
+        limit = 0 if args.start_year is not None else 12
+
+    process_historical_files(limit=limit, start_year=args.start_year)
