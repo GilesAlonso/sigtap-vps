@@ -39,11 +39,13 @@ def process_historical_files(limit=12, start_year=None):
     prev_db_path = None
     total_diffs_recorded = 0
 
+    from history import compute_diffs_between_dbs, insert_diffs, init_history_table, get_db_connection, copy_existing_history
+
     # Garantir a existência do banco final e tabela de histórico
     if not os.path.exists(DB_PATH):
         logging.warning("DB_PATH principal não encontrado. Será criado ao final do processo.")
 
-    final_conn = sqlite3.connect(DB_PATH)
+    final_conn = get_db_connection(DB_PATH)
     init_history_table(final_conn)
     final_conn.close()
 
@@ -56,18 +58,9 @@ def process_historical_files(limit=12, start_year=None):
 
         curr_db_path = os.path.join(TEMP_DIR, f"comp_{idx}.db")
         
-        # Faz o parse da ZIP para curr_db_path temporário
-        # Para redirecionar para curr_db_path temporário:
-        old_output = os.path.join(OUTPUT_DIR, 'sigtap.db')
-        temp_db_target = os.path.join(OUTPUT_DIR, 'temp_sigtap.db')
-
         try:
-            # Processa o zip
-            process_sigtap_zip(local_zip)
-            # O process_sigtap_zip gera DB_PATH, movemos temporariamente para curr_db_path
-            if os.path.exists(DB_PATH):
-                if os.path.exists(curr_db_path): os.remove(curr_db_path)
-                os.rename(DB_PATH, curr_db_path)
+            # Processa o zip diretamente para o curr_db_path temporário
+            process_sigtap_zip(local_zip, target_db_path=curr_db_path)
         except Exception as e:
             logging.error(f"Erro ao processar {zip_filename}: {e}")
             if os.path.exists(local_zip): os.remove(local_zip)
@@ -79,8 +72,8 @@ def process_historical_files(limit=12, start_year=None):
 
         # Se houver um banco anterior, calcula o diff
         if prev_db_path and os.path.exists(prev_db_path):
-            conn_prev = sqlite3.connect(prev_db_path)
-            conn_curr = sqlite3.connect(curr_db_path)
+            conn_prev = get_db_connection(prev_db_path)
+            conn_curr = get_db_connection(curr_db_path)
 
             diffs = compute_diffs_between_dbs(conn_prev, conn_curr)
             
@@ -88,24 +81,23 @@ def process_historical_files(limit=12, start_year=None):
             conn_curr.close()
 
             if diffs:
-                target_conn = sqlite3.connect(DB_PATH) if os.path.exists(DB_PATH) else sqlite3.connect(curr_db_path)
+                target_conn = get_db_connection(DB_PATH) if os.path.exists(DB_PATH) else get_db_connection(curr_db_path)
                 insert_diffs(target_conn, diffs)
                 target_conn.close()
                 total_diffs_recorded += len(diffs)
                 logging.info(f"Inseridos {len(diffs)} registros de histórico no banco.")
 
             # Apaga prev_db_path
-            os.remove(prev_db_path)
+            if os.path.exists(prev_db_path):
+                os.remove(prev_db_path)
 
         prev_db_path = curr_db_path
 
     # No final, o último curr_db_path torna-se o DB_PATH oficial (versão mais recente)
     if prev_db_path and os.path.exists(prev_db_path):
         if os.path.exists(DB_PATH):
-            # Preserva a tabela de histórico do DB_PATH final se necessário
-            conn_final = sqlite3.connect(DB_PATH)
-            conn_last = sqlite3.connect(prev_db_path)
-            from history import copy_existing_history
+            conn_final = get_db_connection(DB_PATH)
+            conn_last = get_db_connection(prev_db_path)
             copy_existing_history(conn_final, conn_last)
             conn_final.close()
             conn_last.close()

@@ -43,18 +43,21 @@ def parse_single_layout_from_zip(zip_file, layout_filename):
                     logging.warning(f"Could not parse layout line: {line}")
     return column_specs
 
-def process_sigtap_zip(zip_file_obj_or_path):
+def process_sigtap_zip(zip_file_obj_or_path, target_db_path=None):
     """
-    Extrai o ZIP do SIGTAP, converte para DataFrames e salva TUDO em um banco SQLite sigtap.db.
-    Isso substitui a geração de múltiplos CSVs.
+    Extrai o ZIP do SIGTAP, converte para DataFrames e salva em um banco SQLite.
+    Se target_db_path for fornecido, grava diretamente no banco especificado.
+    Caso contrário, gera em temp_sigtap.db e faz a substituição atômica por DB_PATH.
     """
-    temp_db = os.path.join(OUTPUT_DIR, 'temp_sigtap.db')
+    doing_atomic_swap = (target_db_path is None)
+    dest_db = target_db_path if target_db_path else os.path.join(OUTPUT_DIR, 'temp_sigtap.db')
     
-    # Se já existir um temp db corrompido de uma run anterior, apaga
-    if os.path.exists(temp_db):
-        os.remove(temp_db)
+    if doing_atomic_swap and os.path.exists(dest_db):
+        os.remove(dest_db)
 
-    conn = sqlite3.connect(temp_db)
+    conn = sqlite3.connect(dest_db, timeout=30.0)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
     
     try:
         with ZipFile(zip_file_obj_or_path, 'r') as z:
@@ -115,19 +118,21 @@ def process_sigtap_zip(zip_file_obj_or_path):
 
         conn.close()
 
-        # Swap atômico: substitui o banco antigo pelo novo com sucesso garantido
-        os.replace(temp_db, DB_PATH)
-        logging.info("SQLite database built successfully!")
+        if doing_atomic_swap:
+            os.replace(dest_db, DB_PATH)
+            logging.info("SQLite database built successfully via atomic swap!")
 
     except Exception as e:
         conn.close()
-        if os.path.exists(temp_db):
-            os.remove(temp_db)
+        if doing_atomic_swap and os.path.exists(dest_db):
+            os.remove(dest_db)
         raise e
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=10.0)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
     return conn
 
 @app.route('/')

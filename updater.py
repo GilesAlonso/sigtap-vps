@@ -52,49 +52,60 @@ def check_and_update_sigtap():
             ftp.retrbinary(f'RETR {latest_file}', f.write)
             
         ftp.quit()
-        print("Download concluído. Iniciando o processamento dos dados...")
+        print("Download concluído. Iniciando o processamento em banco staging (zero downtime)...")
         
-        # Backup do banco antigo para cálculo de deltas se ele existir
-        backup_old_db = os.path.join(OUTPUT_DIR, 'backup_old_sigtap.db')
+        staging_db = os.path.join(OUTPUT_DIR, 'sigtap_staging.db')
+        snapshot_old_db = os.path.join(OUTPUT_DIR, 'sigtap_snapshot_old.db')
+
+        if os.path.exists(staging_db): os.remove(staging_db)
+        if os.path.exists(snapshot_old_db): os.remove(snapshot_old_db)
+
+        # Passo A: Se o banco live já existir, mantemos um snapshot do antigo para diffs e copiamos para staging
         if os.path.exists(DB_PATH):
-            if os.path.exists(backup_old_db): os.remove(backup_old_db)
-            shutil.copy2(DB_PATH, backup_old_db)
+            shutil.copy2(DB_PATH, staging_db)
+            shutil.copy2(DB_PATH, snapshot_old_db)
 
-        # Process the zip file to generate new SQLite database
-        process_sigtap_zip(LOCAL_FILENAME)
+        # Passo B: Todo o processamento pesado é feito ESTRITAMENTE dentro do staging_db
+        process_sigtap_zip(LOCAL_FILENAME, target_db_path=staging_db)
 
-        # Se tínhamos o banco antigo, calcula o delta e preserva o histórico acumulado
-        if os.path.exists(backup_old_db):
+        # Se tínhamos um snapshot antigo, calcula o delta entre snapshot_old_db e staging_db
+        if os.path.exists(snapshot_old_db):
             try:
-                from history import compute_diffs_between_dbs, insert_diffs, copy_existing_history, init_history_table
-                conn_old = sqlite3.connect(backup_old_db)
-                conn_new = sqlite3.connect(DB_PATH)
+                from history import compute_diffs_between_dbs, insert_diffs, get_db_connection
+                conn_old = get_db_connection(snapshot_old_db)
+                conn_staging = get_db_connection(staging_db)
 
-                # Preserva histórico pré-existente
-                copy_existing_history(conn_old, conn_new)
-
-                # Calcula e insere novos deltas da competência
-                diffs = compute_diffs_between_dbs(conn_old, conn_new)
+                diffs = compute_diffs_between_dbs(conn_old, conn_staging)
                 if diffs:
-                    insert_diffs(conn_new, diffs)
-                    print(f"{len(diffs)} alterações registradas no histórico do banco.")
+                    insert_diffs(conn_staging, diffs)
+                    print(f"{len(diffs)} alterações registradas no histórico do banco staging.")
 
                 conn_old.close()
-                conn_new.close()
+                conn_staging.close()
             except Exception as e:
-                print(f"Aviso: Erro ao calcular deltas de histórico: {e}")
+                print(f"Aviso ao calcular deltas no staging: {e}")
             finally:
-                if os.path.exists(backup_old_db):
-                    os.remove(backup_old_db)
+                if os.path.exists(snapshot_old_db):
+                    os.remove(snapshot_old_db)
 
-        # Update version file
+        # Habilita o modo WAL e pragmas no staging antes do swap
+        from history import get_db_connection
+        conn_final = get_db_connection(staging_db)
+        conn_final.execute("PRAGMA journal_mode=WAL;")
+        conn_final.execute("PRAGMA synchronous=NORMAL;")
+        conn_final.commit()
+        conn_final.close()
+
+        # Passo C: Substituição atômica no nível do SO (Zero Downtime para o Gunicorn)
+        os.replace(staging_db, DB_PATH)
+        print("Substituição atômica realizada com sucesso! Banco ao vivo atualizado em milissegundos.")
+
+        # Atualiza arquivo de versão
         os.makedirs(OUTPUT_DIR, exist_ok=True)
         with open(VERSION_FILE, 'w') as f:
             f.write(latest_file)
             
-        print("Processamento concluído com sucesso! Banco de dados atualizado com histórico.")
-        
-        # Remove the zip file to save space
+        # Remove o zip temporário
         if os.path.exists(LOCAL_FILENAME):
             os.remove(LOCAL_FILENAME)
             

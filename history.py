@@ -18,8 +18,17 @@ FIELD_LABELS = {
 
 MONITORED_COLUMNS = list(FIELD_LABELS.keys())
 
+def get_db_connection(db_path):
+    """Abre conexão SQLite com o modo WAL, busy timeout e pragmas de performance ativados."""
+    conn = sqlite3.connect(db_path, timeout=30.0)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
+    return conn
+
 def init_history_table(conn):
     """Garante a existência da tabela e índices de histórico de alterações."""
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
     sql = """
     CREATE TABLE IF NOT EXISTS tb_historico_alteracoes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
