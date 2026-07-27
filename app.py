@@ -603,5 +603,79 @@ def procedimento_detail(codigo):
 def contato():
     return render_template('contato.html')
 
+@app.route('/modificacoes')
+def pagina_modificacoes():
+    return render_template('modificacoes.html')
+
+@app.route('/api/modificacoes')
+def api_modificacoes():
+    if not os.path.exists(DB_PATH):
+        return jsonify({'items': [], 'total': 0, 'competencias': []})
+    
+    try:
+        conn = get_db()
+        
+        # Garante tabela de histórico se ainda não existir
+        from history import init_history_table
+        init_history_table(conn)
+        
+        # Lista de competências disponíveis
+        comp_rows = conn.execute("SELECT DISTINCT competencia_para FROM tb_historico_alteracoes ORDER BY competencia_para DESC").fetchall()
+        competencias = [r['competencia_para'] for r in comp_rows]
+        
+        competencia = request.args.get('competencia', '').strip()
+        tipo = request.args.get('tipo', '').strip()
+        query = request.args.get('query', '').strip()
+        page = max(1, int(request.args.get('page', 1)))
+        per_page = min(100, max(10, int(request.args.get('per_page', 50))))
+        
+        where_clauses = []
+        params = []
+        
+        if competencia:
+            where_clauses.append("competencia_para = ?")
+            params.append(competencia)
+            
+        if tipo:
+            where_clauses.append("tp_alteracao = ?")
+            params.append(tipo)
+            
+        if query:
+            where_clauses.append("(co_procedimento LIKE ? OR no_procedimento LIKE ?)")
+            params.extend([f"%{query}%", f"%{query}%"])
+            
+        where_sql = ""
+        if where_clauses:
+            where_sql = "WHERE " + " AND ".join(where_clauses)
+            
+        total_count = conn.execute(f"SELECT COUNT(*) FROM tb_historico_alteracoes {where_sql}", params).fetchone()[0]
+        
+        offset = (page - 1) * per_page
+        query_sql = f"SELECT * FROM tb_historico_alteracoes {where_sql} ORDER BY id DESC LIMIT ? OFFSET ?"
+        rows = [dict(r) for r in conn.execute(query_sql, params + [per_page, offset]).fetchall()]
+        
+        return jsonify({
+            'items': rows,
+            'total': total_count,
+            'page': page,
+            'per_page': per_page,
+            'competencias': competencias
+        })
+    except Exception as e:
+        logging.error(f"Erro em api_modificacoes: {e}")
+        return jsonify({'items': [], 'total': 0, 'competencias': [], 'error': str(e)})
+
+@app.route('/api/procedimento/<codigo>/historico')
+def api_procedimento_historico(codigo):
+    if not os.path.exists(DB_PATH):
+        return jsonify([])
+    try:
+        conn = get_db()
+        rows = [dict(r) for r in conn.execute("SELECT * FROM tb_historico_alteracoes WHERE co_procedimento = ? ORDER BY id DESC", (codigo,)).fetchall()]
+        return jsonify(rows)
+    except Exception as e:
+        logging.error(f"Erro em api_procedimento_historico: {e}")
+        return jsonify([])
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)

@@ -1,11 +1,13 @@
 import ftplib
 import os
 import sys
+import shutil
+import sqlite3
 
 # Add the current directory to the path so we can import from app.py
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from app import process_sigtap_zip, OUTPUT_DIR
+from app import process_sigtap_zip, OUTPUT_DIR, DB_PATH
 
 FTP_HOST = 'ftp2.datasus.gov.br'
 FTP_DIR = '/pub/sistemas/tup/downloads/'
@@ -50,19 +52,49 @@ def check_and_update_sigtap():
             ftp.retrbinary(f'RETR {latest_file}', f.write)
             
         ftp.quit()
-        print("Download concluído. Iniciando o processamento dos dados (isso pode levar alguns minutos)...")
+        print("Download concluído. Iniciando o processamento dos dados...")
         
-        # Process the zip file to generate CSVs
+        # Backup do banco antigo para cálculo de deltas se ele existir
+        backup_old_db = os.path.join(OUTPUT_DIR, 'backup_old_sigtap.db')
+        if os.path.exists(DB_PATH):
+            if os.path.exists(backup_old_db): os.remove(backup_old_db)
+            shutil.copy2(DB_PATH, backup_old_db)
+
+        # Process the zip file to generate new SQLite database
         process_sigtap_zip(LOCAL_FILENAME)
-        
+
+        # Se tínhamos o banco antigo, calcula o delta e preserva o histórico acumulado
+        if os.path.exists(backup_old_db):
+            try:
+                from history import compute_diffs_between_dbs, insert_diffs, copy_existing_history, init_history_table
+                conn_old = sqlite3.connect(backup_old_db)
+                conn_new = sqlite3.connect(DB_PATH)
+
+                # Preserva histórico pré-existente
+                copy_existing_history(conn_old, conn_new)
+
+                # Calcula e insere novos deltas da competência
+                diffs = compute_diffs_between_dbs(conn_old, conn_new)
+                if diffs:
+                    insert_diffs(conn_new, diffs)
+                    print(f"{len(diffs)} alterações registradas no histórico do banco.")
+
+                conn_old.close()
+                conn_new.close()
+            except Exception as e:
+                print(f"Aviso: Erro ao calcular deltas de histórico: {e}")
+            finally:
+                if os.path.exists(backup_old_db):
+                    os.remove(backup_old_db)
+
         # Update version file
         os.makedirs(OUTPUT_DIR, exist_ok=True)
         with open(VERSION_FILE, 'w') as f:
             f.write(latest_file)
             
-        print("Processamento concluído com sucesso! Banco de dados atualizado.")
+        print("Processamento concluído com sucesso! Banco de dados atualizado com histórico.")
         
-        # Optional: remove the zip file to save space
+        # Remove the zip file to save space
         if os.path.exists(LOCAL_FILENAME):
             os.remove(LOCAL_FILENAME)
             

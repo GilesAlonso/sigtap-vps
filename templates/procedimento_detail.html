@@ -436,8 +436,11 @@
 <body>
 
     <div class="navbar">
-        <a href="{{ url_for('index') }}"><i class="fas fa-arrow-left"></i> Voltar ao Painel Principal</a>
-        <a href="/contato"><i class="fas fa-envelope"></i> Contato / Suporte</a>
+        <a href="{{ url_for('index') }}"><i class="fas fa-arrow-left"></i> Painel Principal</a>
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="/modificacoes"><i class="fas fa-history"></i> Modificações</a>
+            <a href="/contato"><i class="fas fa-envelope"></i> Contato / Suporte</a>
+        </div>
     </div>
 
     <div class="container">
@@ -613,12 +616,80 @@
             </div>
         {% endif %}
 
+        <!-- Card de Histórico de Modificações do Procedimento -->
+        <div class="data-card" style="margin-top: 2rem; border-top: 4px solid var(--accent);" id="card-historico-container">
+            <div class="data-card-header">
+                <div class="data-card-title">
+                    <i class="fas fa-history" style="color: var(--accent);"></i> Histórico de Modificações deste Procedimento
+                </div>
+                <span class="count-pill" id="hist-count-badge">0 alterações</span>
+            </div>
+            <div class="data-card-body" id="hist-card-body">
+                <div style="padding: 1.5rem; text-align: center; color: var(--text-muted);">
+                    <i class="fas fa-spinner fa-spin"></i> Verificando histórico de alterações...
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Toast Notification -->
     <div id="toast"><i class="fas fa-check-circle" style="color: #10B981;"></i> <span id="toast-msg">Copiado para a área de transferência!</span></div>
 
     <script>
+        async function loadProcedureHistory() {
+            const code = "{{ proc.CO_PROCEDIMENTO }}";
+            try {
+                const res = await fetch(`/api/procedimento/${code}/historico`);
+                const history = await res.json();
+                const body = document.getElementById("hist-card-body");
+                const badge = document.getElementById("hist-count-badge");
+
+                badge.textContent = `${history.length} alterações`;
+
+                if (!history || history.length === 0) {
+                    body.innerHTML = `<div style="padding: 1.5rem; text-align: center; color: var(--text-muted);"><i class="fas fa-info-circle"></i> Nenhuma alteração registrada para este procedimento nas últimas atualizações processadas.</div>`;
+                    return;
+                }
+
+                let html = `<table>
+                    <thead>
+                        <tr>
+                            <th>Competência</th>
+                            <th>Tipo</th>
+                            <th>Campo / Regra</th>
+                            <th>De ➔ Para (Valor Anterior ➔ Novo)</th>
+                            <th>Data do Registro</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+                history.forEach(item => {
+                    const compDe = item.competencia_de && item.competencia_de.length === 6 ? `${item.competencia_de.slice(4)}/${item.competencia_de.slice(0,4)}` : item.competencia_de;
+                    const compPara = item.competencia_para && item.competencia_para.length === 6 ? `${item.competencia_para.slice(4)}/${item.competencia_para.slice(0,4)}` : item.competencia_para;
+                    const valOld = item.valor_anterior ? item.valor_anterior : '(vazio)';
+                    const valNew = item.valor_novo ? item.valor_novo : '(vazio)';
+
+                    html += `<tr>
+                        <td><span style="font-size: 0.75rem; font-weight: 600; background: #E5E7EB; padding: 0.2rem 0.5rem; border-radius: 0.25rem;">${compDe} ➔ ${compPara}</span></td>
+                        <td><span style="font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 9999px; text-transform: uppercase; background-color: #FFEDD5; color: #C2410C;">${item.tp_alteracao}</span></td>
+                        <td style="font-weight: 600; color: var(--text-muted);">${item.nome_campo || item.campo_alterado}</td>
+                        <td>
+                            <span style="color: #9CA3AF; text-decoration: line-through; margin-right: 0.4rem;">${valOld}</span>
+                            <span style="color: var(--accent); font-weight: bold; margin-right: 0.4rem;">➔</span>
+                            <span style="font-weight: 700;">${valNew}</span>
+                        </td>
+                        <td style="font-size: 0.8rem; color: var(--text-muted);">${item.dt_registro ? item.dt_registro.split(' ')[0] : ''}</td>
+                    </tr>`;
+                });
+
+                html += `</tbody></table>`;
+                body.innerHTML = html;
+            } catch (err) {
+                console.error("Erro ao carregar histórico do procedimento:", err);
+            }
+        }
+        document.addEventListener("DOMContentLoaded", loadProcedureHistory);
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
                 showToast("Copiado: " + text);
