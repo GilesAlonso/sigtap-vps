@@ -9,7 +9,7 @@ WorkingDirectory=/home/ubuntu/Sigtap
 Environment="PATH=/home/ubuntu/.local/bin:/usr/bin"
 MemoryHigh=2G
 MemoryMax=3G
-ExecStart=/home/ubuntu/.local/bin/uv run gunicorn --worker-class gthread -w 2 --threads 4 --backlog 2048 -b 0.0.0.0:5000 --max-requests 1000 --max-requests-jitter 50 --forwarded-allow-ips="*" --access-logfile /home/ubuntu/Sigtap/access.log --access-logformat '%%({CF-Connecting-IP}i)s %%(l)s %%(u)s %%(t)s "%%(r)s" %%(s)s %%(b)s "%%(f)s" "%%(a)s"' app:app
+ExecStart=/home/ubuntu/.local/bin/uv run gunicorn --worker-class gthread -w 2 --threads 4 --backlog 2048 -b 0.0.0.0:5000 --max-requests 1000 --max-requests-jitter 50 --forwarded-allow-ips="*" --access-logfile /home/ubuntu/Sigtap/access.log --access-logformat '%%({cf-connecting-ip}i)s %%(l)s %%(u)s %%(t)s "%%(r)s" %%(s)s %%(b)s "%%(f)s" "%%(a)s"' app:app
 
 [Install]
 WantedBy=multi-user.target
