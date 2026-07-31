@@ -120,6 +120,7 @@ def process_sigtap_zip(zip_file_obj_or_path, target_db_path=None):
 
         if doing_atomic_swap:
             os.replace(dest_db, DB_PATH)
+            clear_app_cache()
             logging.info("SQLite database built successfully via atomic swap!")
 
     except Exception as e:
@@ -154,59 +155,61 @@ def index():
     return render_template('index.html', competencia=competencia_formatada)
 
 
-@app.route('/api/filters')
-def api_filters():
+# Cache em memória para dados de filtros estáticos
+_CACHE_FILTERS_DATA = None
+
+def clear_app_cache():
+    """Limpa o cache em memória (chamado após atualizações do banco de dados)."""
+    global _CACHE_FILTERS_DATA
+    _CACHE_FILTERS_DATA = None
+    logging.info("Cache em memória limpo com sucesso.")
+
+def get_cached_filters():
+    global _CACHE_FILTERS_DATA
+    if _CACHE_FILTERS_DATA is not None:
+        return _CACHE_FILTERS_DATA
+
     if not os.path.exists(DB_PATH):
-        return jsonify({})
-    
+        return {}
+
     conn = get_db()
     filters = {}
-    
-    try:
-        filters['financiamentos'] = [dict(row) for row in conn.execute("SELECT CO_FINANCIAMENTO, NO_FINANCIAMENTO FROM tb_financiamento ORDER BY CO_FINANCIAMENTO")]
-    except: filters['financiamentos'] = []
-        
-    try:
-        filters['grupos'] = [dict(row) for row in conn.execute("SELECT CO_GRUPO, NO_GRUPO FROM tb_grupo ORDER BY CO_GRUPO")]
-    except: filters['grupos'] = []
-        
-    try:
-        filters['subgrupos'] = [dict(row) for row in conn.execute("SELECT CO_GRUPO, CO_SUB_GRUPO, NO_SUB_GRUPO FROM tb_sub_grupo ORDER BY CO_SUB_GRUPO")]
-    except: filters['subgrupos'] = []
-        
-    try:
-        filters['formas'] = [dict(row) for row in conn.execute("SELECT CO_GRUPO, CO_SUB_GRUPO, CO_FORMA_ORGANIZACAO, NO_FORMA_ORGANIZACAO FROM tb_forma_organizacao ORDER BY CO_FORMA_ORGANIZACAO")]
-    except: filters['formas'] = []
 
-    try:
-        filters['rubricas'] = [dict(row) for row in conn.execute("SELECT CO_RUBRICA, NO_RUBRICA FROM tb_rubrica ORDER BY CO_RUBRICA")]
-    except: filters['rubricas'] = []
+    queries = [
+        ('financiamentos', "SELECT CO_FINANCIAMENTO, NO_FINANCIAMENTO FROM tb_financiamento ORDER BY CO_FINANCIAMENTO"),
+        ('grupos', "SELECT CO_GRUPO, NO_GRUPO FROM tb_grupo ORDER BY CO_GRUPO"),
+        ('subgrupos', "SELECT CO_GRUPO, CO_SUB_GRUPO, NO_SUB_GRUPO FROM tb_sub_grupo ORDER BY CO_SUB_GRUPO"),
+        ('formas', "SELECT CO_GRUPO, CO_SUB_GRUPO, CO_FORMA_ORGANIZACAO, NO_FORMA_ORGANIZACAO FROM tb_forma_organizacao ORDER BY CO_FORMA_ORGANIZACAO"),
+        ('rubricas', "SELECT CO_RUBRICA, NO_RUBRICA FROM tb_rubrica ORDER BY CO_RUBRICA"),
+        ('registros', "SELECT CO_REGISTRO, NO_REGISTRO FROM tb_registro ORDER BY CO_REGISTRO"),
+        ('leitos', "SELECT CO_TIPO_LEITO, NO_TIPO_LEITO FROM tb_tipo_leito ORDER BY CO_TIPO_LEITO"),
+        ('redes', "SELECT CO_COMPONENTE_REDE, NO_COMPONENTE_REDE FROM tb_componente_rede ORDER BY CO_COMPONENTE_REDE"),
+        ('habilitacoes', "SELECT CO_HABILITACAO, NO_HABILITACAO FROM tb_habilitacao ORDER BY CO_HABILITACAO"),
+        ('servicos', "SELECT CO_SERVICO, NO_SERVICO FROM tb_servico ORDER BY CO_SERVICO"),
+        ('detalhes', "SELECT CO_DETALHE, NO_DETALHE FROM tb_detalhe ORDER BY CO_DETALHE")
+    ]
 
-    try:
-        filters['registros'] = [dict(row) for row in conn.execute("SELECT CO_REGISTRO, NO_REGISTRO FROM tb_registro ORDER BY CO_REGISTRO")]
-    except: filters['registros'] = []
+    for key, sql in queries:
+        try:
+            filters[key] = [dict(row) for row in conn.execute(sql)]
+        except Exception:
+            filters[key] = []
 
-    try:
-        filters['leitos'] = [dict(row) for row in conn.execute("SELECT CO_TIPO_LEITO, NO_TIPO_LEITO FROM tb_tipo_leito ORDER BY CO_TIPO_LEITO")]
-    except: filters['leitos'] = []
+    _CACHE_FILTERS_DATA = filters
+    return _CACHE_FILTERS_DATA
 
-    try:
-        filters['redes'] = [dict(row) for row in conn.execute("SELECT CO_COMPONENTE_REDE, NO_COMPONENTE_REDE FROM tb_componente_rede ORDER BY CO_COMPONENTE_REDE")]
-    except: filters['redes'] = []
+@app.after_request
+def add_header(response):
+    if request.path.startswith('/static/'):
+        response.headers['Cache-Control'] = 'public, max-age=86400'
+    return response
 
-    try:
-        filters['habilitacoes'] = [dict(row) for row in conn.execute("SELECT CO_HABILITACAO, NO_HABILITACAO FROM tb_habilitacao ORDER BY CO_HABILITACAO")]
-    except: filters['habilitacoes'] = []
-
-    try:
-        filters['servicos'] = [dict(row) for row in conn.execute("SELECT CO_SERVICO, NO_SERVICO FROM tb_servico ORDER BY CO_SERVICO")]
-    except: filters['servicos'] = []
-
-    try:
-        filters['detalhes'] = [dict(row) for row in conn.execute("SELECT CO_DETALHE, NO_DETALHE FROM tb_detalhe ORDER BY CO_DETALHE")]
-    except: filters['detalhes'] = []
-
-    return jsonify(filters)
+@app.route('/api/filters')
+def api_filters():
+    data = get_cached_filters()
+    resp = jsonify(data)
+    resp.headers['Cache-Control'] = 'public, max-age=3600'
+    return resp
 
 
 @app.route('/api/procedimentos')
