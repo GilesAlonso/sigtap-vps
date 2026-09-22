@@ -8,6 +8,7 @@ import logging
 from werkzeug.utils import secure_filename
 import shutil
 import sqlite3
+import unicodedata
 
 app = Flask(__name__)
 
@@ -129,11 +130,24 @@ def process_sigtap_zip(zip_file_obj_or_path, target_db_path=None):
             os.remove(dest_db)
         raise e
 
+def normalize_text(text):
+    """
+    Normaliza texto para busca insensível a maiúsculas/minúsculas, acentos, cedilha e hífens.
+    Variantes de grafia como 'SS'/'S' ou 'RR'/'R' também são toleradas.
+    """
+    if not text:
+        return ""
+    nfd_form = unicodedata.normalize('NFD', str(text))
+    without_accents = "".join(c for c in nfd_form if unicodedata.category(c) != 'Mn')
+    upper_text = without_accents.upper().replace('-', '')
+    return upper_text.replace('SS', 'S').replace('RR', 'R')
+
 def get_db():
     conn = sqlite3.connect(DB_PATH, timeout=10.0)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA synchronous=NORMAL;")
+    conn.create_function("NORMALIZE_TEXT", 1, normalize_text)
     return conn
 
 @app.route('/')
@@ -227,11 +241,17 @@ def api_procedimentos():
         query += " AND CO_PROCEDIMENTO LIKE ?"
         params.append(f"{codigo}%")
         
-    nome = request.args.get('nome', '')
+    nome = request.args.get('nome', '').strip()
     if nome:
-        query += " AND NO_PROCEDIMENTO LIKE ?"
-        params.append(f"%{nome}%")
-        
+        norm_nome = normalize_text(nome)
+        norm_nome_no_space = norm_nome.replace(" ", "")
+        if norm_nome_no_space and norm_nome_no_space != norm_nome:
+            query += " AND (NORMALIZE_TEXT(NO_PROCEDIMENTO) LIKE ? OR NORMALIZE_TEXT(NO_PROCEDIMENTO) LIKE ?)"
+            params.extend([f"%{norm_nome}%", f"%{norm_nome_no_space}%"])
+        else:
+            query += " AND NORMALIZE_TEXT(NO_PROCEDIMENTO) LIKE ?"
+            params.append(f"%{norm_nome}%")
+
     complexidade = request.args.get('complexidade', '')
     if complexidade:
         query += " AND TP_COMPLEXIDADE = ?"
@@ -285,15 +305,17 @@ def api_procedimentos():
         query += " AND CO_RUBRICA = ?"
         params.append(rubrica)
 
-    cid = request.args.get('cid', '')
+    cid = request.args.get('cid', '').strip()
     if cid:
-        query += " AND CO_PROCEDIMENTO IN (SELECT r.CO_PROCEDIMENTO FROM rl_procedimento_cid r JOIN tb_cid c ON r.CO_CID = c.CO_CID WHERE c.CO_CID LIKE ? OR c.NO_CID LIKE ?)"
-        params.extend([f"%{cid}%", f"%{cid}%"])
+        norm_cid = normalize_text(cid)
+        query += " AND CO_PROCEDIMENTO IN (SELECT r.CO_PROCEDIMENTO FROM rl_procedimento_cid r JOIN tb_cid c ON r.CO_CID = c.CO_CID WHERE c.CO_CID LIKE ? OR NORMALIZE_TEXT(c.NO_CID) LIKE ?)"
+        params.extend([f"%{cid}%", f"%{norm_cid}%"])
 
-    ocupacao = request.args.get('ocupacao', '')
+    ocupacao = request.args.get('ocupacao', '').strip()
     if ocupacao:
-        query += " AND CO_PROCEDIMENTO IN (SELECT r.CO_PROCEDIMENTO FROM rl_procedimento_ocupacao r JOIN tb_ocupacao o ON r.CO_OCUPACAO = o.CO_OCUPACAO WHERE o.CO_OCUPACAO LIKE ? OR o.NO_OCUPACAO LIKE ?)"
-        params.extend([f"%{ocupacao}%", f"%{ocupacao}%"])
+        norm_ocup = normalize_text(ocupacao)
+        query += " AND CO_PROCEDIMENTO IN (SELECT r.CO_PROCEDIMENTO FROM rl_procedimento_ocupacao r JOIN tb_ocupacao o ON r.CO_OCUPACAO = o.CO_OCUPACAO WHERE o.CO_OCUPACAO LIKE ? OR NORMALIZE_TEXT(o.NO_OCUPACAO) LIKE ?)"
+        params.extend([f"%{ocupacao}%", f"%{norm_ocup}%"])
 
     leito = request.args.get('leito', '')
     if leito:
@@ -649,8 +671,14 @@ def api_modificacoes():
             params.append(tipo)
             
         if query:
-            where_clauses.append("(co_procedimento LIKE ? OR no_procedimento LIKE ?)")
-            params.extend([f"%{query}%", f"%{query}%"])
+            norm_q = normalize_text(query)
+            norm_q_no_space = norm_q.replace(" ", "")
+            if norm_q_no_space and norm_q_no_space != norm_q:
+                where_clauses.append("(co_procedimento LIKE ? OR NORMALIZE_TEXT(no_procedimento) LIKE ? OR NORMALIZE_TEXT(no_procedimento) LIKE ?)")
+                params.extend([f"%{query}%", f"%{norm_q}%", f"%{norm_q_no_space}%"])
+            else:
+                where_clauses.append("(co_procedimento LIKE ? OR NORMALIZE_TEXT(no_procedimento) LIKE ?)")
+                params.extend([f"%{query}%", f"%{norm_q}%"])
             
         where_sql = ""
         if where_clauses:
